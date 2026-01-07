@@ -24,9 +24,10 @@ import { LucideAngularModule, ShoppingCart, Menu, X } from "lucide-angular"
             <a href="#shop" class="text-slate-700 hover:text-sky-600 font-medium transition-colors">Shop</a>
             <a href="#categories" class="text-slate-700 hover:text-sky-600 font-medium transition-colors">Categories</a>
             <a href="#about" class="text-slate-700 hover:text-sky-600 font-medium transition-colors">About</a>
-            
+            <a href="#" (click)="toggleCart(); $event.preventDefault()" class="text-slate-700 hover:text-sky-600 font-medium transition-colors">Cart</a>
+
             <!-- Cart Icon with Badge -->
-            <button class="relative p-2 hover:bg-slate-100 rounded-lg transition-colors">
+            <button (click)="toggleCart()" class="relative p-2 hover:bg-slate-100 rounded-lg transition-colors" aria-label="Open cart">
               <lucide-icon [img]="ShoppingCart" class="text-slate-700" [size]="24"></lucide-icon>
               <span *ngIf="cartCount > 0" 
                     class="absolute -top-1 -right-1 bg-sky-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center animate-bounce">
@@ -47,6 +48,7 @@ import { LucideAngularModule, ShoppingCart, Menu, X } from "lucide-angular"
             <a href="#shop" class="text-slate-700 hover:text-sky-600 font-medium transition-colors">Shop</a>
             <a href="#categories" class="text-slate-700 hover:text-sky-600 font-medium transition-colors">Categories</a>
             <a href="#about" class="text-slate-700 hover:text-sky-600 font-medium transition-colors">About</a>
+            <a href="#" (click)="toggleCart(); $event.preventDefault()" class="text-slate-700 hover:text-sky-600 font-medium transition-colors">Cart</a>
             <div class="flex items-center gap-2">
               <lucide-icon [img]="ShoppingCart" [size]="20"></lucide-icon>
               <span class="text-slate-700">Cart ({{ cartCount }})</span>
@@ -75,5 +77,9 @@ export class NavbarComponent implements OnInit {
 
   toggleMobileMenu() {
     this.mobileMenuOpen = !this.mobileMenuOpen
+  }
+
+  toggleCart() {
+    this.cartService.toggleCart()
   }
 }

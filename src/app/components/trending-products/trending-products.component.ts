@@ -34,6 +34,8 @@ interface Product {
             <div class="relative overflow-hidden bg-slate-100 aspect-square">
               <img [src]="product.image" 
                    [alt]="product.name" 
+                   loading="lazy"
+                   (error)="onImgError($event)"
                    class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
               <div *ngIf="product.badge" 
                    class="absolute top-4 left-4 px-3 py-1 bg-red-500 text-white text-xs font-bold rounded-full">
@@ -85,24 +87,32 @@ export class TrendingProductsComponent {
 
   constructor(private cartService: CartService) {}
 
+  onImgError(event: Event): void {
+    const img = event.target as HTMLImageElement
+    if (img) {
+      img.src = 'assets/images/placeholder.jpg'
+      img.classList.add('opacity-70')
+    }
+  }
+
   products: Product[] = [
     {
-      id: 1,
-      name: "Premium Wireless Headphones",
-      price: 299,
-      originalPrice: 399,
-      rating: 5,
-      reviews: 243,
-      image: "/premium-wireless-headphones.png",
-      badge: "SALE",
-    },
+    id: 1,
+    name: "Premium Wireless Headphones",
+    price: 299,
+    originalPrice: 399,
+    rating: 5,
+    reviews: 243,
+    image: "assets/images/premium-wireless-headphones.png",
+    badge: "SALE",
+  },
     {
       id: 2,
       name: "Luxury Minimalist Watch",
       price: 599,
       rating: 5,
       reviews: 189,
-      image: "/luxury-minimalist-watch.jpg",
+      image: "assets/images/luxury-minimalist-watch.jpg",
       badge: "NEW",
     },
     {
@@ -112,7 +122,7 @@ export class TrendingProductsComponent {
       originalPrice: 279,
       rating: 4,
       reviews: 156,
-      image: "/designer-backpack.png",
+      image: "assets/images/designer-backpack.png",
     },
     {
       id: 4,
@@ -120,7 +130,7 @@ export class TrendingProductsComponent {
       price: 149,
       rating: 5,
       reviews: 312,
-      image: "/smart-fitness-tracker.png",
+      image: "assets/images/smart-fitness-tracker.png",
       badge: "HOT",
     },
     {
@@ -129,7 +139,7 @@ export class TrendingProductsComponent {
       price: 89,
       rating: 5,
       reviews: 428,
-      image: "/premium-leather-wallet.png",
+      image: "assets/images/premium-leather-wallet.png",
     },
     {
       id: 6,
@@ -138,7 +148,7 @@ export class TrendingProductsComponent {
       originalPrice: 349,
       rating: 4,
       reviews: 198,
-      image: "/designer-sunglasses.png",
+      image: "assets/images/designer-sunglasses.png",
       badge: "SALE",
     },
     {
@@ -147,7 +157,7 @@ export class TrendingProductsComponent {
       price: 129,
       rating: 5,
       reviews: 276,
-      image: "/bluetooth-speaker.jpg",
+      image: "assets/images/bluetooth-speaker.jpg",
     },
     {
       id: 8,
@@ -155,12 +165,17 @@ export class TrendingProductsComponent {
       price: 79,
       rating: 4,
       reviews: 164,
-      image: "/laptop-sleeve.png",
+      image: "assets/images/laptop-sleeve.png",
     },
   ]
 
   addToCart(product: Product) {
-    console.log("[v0] Adding product to cart:", product.name)
-    this.cartService.addToCart()
+    console.log("[v2] Adding product to cart:", product.name)
+    this.cartService.addToCart({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: product.image,
+    })
   }
 }
