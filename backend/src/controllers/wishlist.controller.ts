@@ -10,85 +10,69 @@ export class WishlistController {
   }
 
   getWishlist = async (req: AuthRequest, res: Response) => {
-    try {
-      if (!req.user) {
-        return res.status(401).json({
-          status: 'error',
-          message: 'Authentication required',
-        });
-      }
-
-      const wishlist = await this.wishlistService.getWishlist(req.user.id);
-
-      res.status(200).json({
-        status: 'success',
-        data: wishlist,
+    if (!req.user) {
+      return res.status(401).json({
+        status: 'error',
+        message: 'Authentication required',
       });
-    } catch (error) {
-      throw error;
     }
+
+    const wishlist = await this.wishlistService.getWishlist(req.user.id);
+
+    res.status(200).json({
+      status: 'success',
+      data: wishlist,
+    });
   };
 
   addToWishlist = async (req: AuthRequest, res: Response) => {
-    try {
-      if (!req.user) {
-        return res.status(401).json({
-          status: 'error',
-          message: 'Authentication required',
-        });
-      }
-
-      const { productId } = req.body;
-      const item = await this.wishlistService.addToWishlist(req.user.id, productId);
-
-      res.status(201).json({
-        status: 'success',
-        message: 'Item added to wishlist',
-        data: item,
+    if (!req.user) {
+      return res.status(401).json({
+        status: 'error',
+        message: 'Authentication required',
       });
-    } catch (error) {
-      throw error;
     }
+
+    const { productId } = req.body;
+    const item = await this.wishlistService.addToWishlist(req.user.id, productId);
+
+    res.status(201).json({
+      status: 'success',
+      message: 'Item added to wishlist',
+      data: item,
+    });
   };
 
   removeFromWishlist = async (req: AuthRequest, res: Response) => {
-    try {
-      if (!req.user) {
-        return res.status(401).json({
-          status: 'error',
-          message: 'Authentication required',
-        });
-      }
-
-      const { itemId } = req.params;
-      const result = await this.wishlistService.removeFromWishlist(req.user.id, itemId as string);
-
-      res.status(200).json({
-        status: 'success',
-        message: result.message,
+    if (!req.user) {
+      return res.status(401).json({
+        status: 'error',
+        message: 'Authentication required',
       });
-    } catch (error) {
-      throw error;
     }
+
+    const { itemId } = req.params;
+    const result = await this.wishlistService.removeFromWishlist(req.user.id, itemId as string);
+
+    res.status(200).json({
+      status: 'success',
+      message: result.message,
+    });
   };
 
   clearWishlist = async (req: AuthRequest, res: Response) => {
-    try {
-      if (!req.user) {
-        return res.status(401).json({
-          status: 'error',
-          message: 'Authentication required',
-        });
-      }
-
-      const result = await this.wishlistService.clearWishlist(req.user.id);
-
-      res.status(200).json({
-        status: 'success',
-        message: result.message,
+    if (!req.user) {
+      return res.status(401).json({
+        status: 'error',
+        message: 'Authentication required',
       });
-    } catch (error) {
-      throw error;
     }
+
+    const result = await this.wishlistService.clearWishlist(req.user.id);
+
+    res.status(200).json({
+      status: 'success',
+      message: result.message,
+    });
   };
 }

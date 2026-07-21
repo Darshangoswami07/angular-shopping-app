@@ -139,7 +139,7 @@ export class AuthService {
         accessToken: newAccessToken,
         refreshToken: newRefreshToken,
       };
-    } catch (error) {
+    } catch {
       throw new AppError('Invalid refresh token', 401);
     }
   }
@@ -179,7 +179,7 @@ export class AuthService {
       });
 
       return { message: 'Password reset successful' };
-    } catch (error) {
+    } catch {
       throw new AppError('Invalid or expired token', 401);
     }
   }

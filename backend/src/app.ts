@@ -4,7 +4,7 @@ import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
-import express from 'express';
+import express, { type Request, type Response, type RequestHandler } from 'express';
 import { env } from '#/config/env.js';
 import { errorHandler, notFoundHandler } from '#/middleware/error.middleware.js';
 import authRoutes from '#/routes/auth.routes.js';
@@ -26,12 +26,12 @@ app.use(cors({
 }));
 
 // Body parsing
-app.use(express.json() as any);
-app.use(express.urlencoded({ extended: true }) as any);
-app.use(cookieParser() as any);
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser() as unknown as RequestHandler);
 
 // Compression
-app.use(compression() as any);
+app.use(compression() as unknown as RequestHandler);
 
 // Logging
 if (env.nodeEnv === 'development') {
@@ -44,10 +44,10 @@ const limiter = rateLimit({
   max: 100, // limit each IP to 100 requests per windowMs
   message: 'Too many requests from this IP, please try again later.',
 });
-app.use('/api', limiter as any);
+app.use('/api', limiter as unknown as RequestHandler);
 
 // Health check
-app.get('/health', (req, res) => {
+app.get('/health', (req: Request, res: Response) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 

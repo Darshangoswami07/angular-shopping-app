@@ -11,63 +11,55 @@ export class AuthController {
   }
 
   register = async (req: AuthRequest, res: Response) => {
-    try {
-      const data: RegisterInput = req.body;
-      const result = await this.authService.register(data);
+    const data: RegisterInput = req.body;
+    const result = await this.authService.register(data);
 
-      // Set HTTP-only cookies
-      res.cookie('accessToken', result.accessToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      });
+    // Set HTTP-only cookies
+    res.cookie('accessToken', result.accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
 
-      res.cookie('refreshToken', result.refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-      });
+    res.cookie('refreshToken', result.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    });
 
-      res.status(201).json({
-        status: 'success',
-        message: 'Registration successful',
-        data: result,
-      });
-    } catch (error) {
-      throw error;
-    }
+    res.status(201).json({
+      status: 'success',
+      message: 'Registration successful',
+      data: result,
+    });
   };
 
   login = async (req: AuthRequest, res: Response) => {
-    try {
-      const data: LoginInput = req.body;
-      const result = await this.authService.login(data);
+    const data: LoginInput = req.body;
+    const result = await this.authService.login(data);
 
-      // Set HTTP-only cookies
-      res.cookie('accessToken', result.accessToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      });
+    // Set HTTP-only cookies
+    res.cookie('accessToken', result.accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
 
-      res.cookie('refreshToken', result.refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-      });
+    res.cookie('refreshToken', result.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    });
 
-      res.status(200).json({
-        status: 'success',
-        message: 'Login successful',
-        data: result,
-      });
-    } catch (error) {
-      throw error;
-    }
+    res.status(200).json({
+      status: 'success',
+      message: 'Login successful',
+      data: result,
+    });
   };
 
   logout = async (req: AuthRequest, res: Response) => {
@@ -81,114 +73,94 @@ export class AuthController {
   };
 
   refreshToken = async (req: AuthRequest, res: Response) => {
-    try {
-      const { refreshToken } = req.cookies;
+    const { refreshToken } = req.cookies;
 
-      if (!refreshToken) {
-        return res.status(401).json({
-          status: 'error',
-          message: 'Refresh token not found',
-        });
-      }
-
-      const result = await this.authService.refreshToken(refreshToken);
-
-      // Set new HTTP-only cookies
-      res.cookie('accessToken', result.accessToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    if (!refreshToken) {
+      return res.status(401).json({
+        status: 'error',
+        message: 'Refresh token not found',
       });
-
-      res.cookie('refreshToken', result.refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-      });
-
-      res.status(200).json({
-        status: 'success',
-        message: 'Token refreshed successfully',
-        data: result,
-      });
-    } catch (error) {
-      throw error;
     }
+
+    const result = await this.authService.refreshToken(refreshToken);
+
+    // Set new HTTP-only cookies
+    res.cookie('accessToken', result.accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    res.cookie('refreshToken', result.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    });
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Token refreshed successfully',
+      data: result,
+    });
   };
 
   forgotPassword = async (req: AuthRequest, res: Response) => {
-    try {
-      const { email } = req.body;
-      const result = await this.authService.forgotPassword(email);
+    const { email } = req.body;
+    const result = await this.authService.forgotPassword(email);
 
-      res.status(200).json({
-        status: 'success',
-        message: result.message,
-        data: result,
-      });
-    } catch (error) {
-      throw error;
-    }
+    res.status(200).json({
+      status: 'success',
+      message: result.message,
+      data: result,
+    });
   };
 
   resetPassword = async (req: AuthRequest, res: Response) => {
-    try {
-      const { token, password } = req.body;
-      const result = await this.authService.resetPassword(token, password);
+    const { token, password } = req.body;
+    const result = await this.authService.resetPassword(token, password);
 
-      res.status(200).json({
-        status: 'success',
-        message: result.message,
-      });
-    } catch (error) {
-      throw error;
-    }
+    res.status(200).json({
+      status: 'success',
+      message: result.message,
+    });
   };
 
   changePassword = async (req: AuthRequest, res: Response) => {
-    try {
-      if (!req.user) {
-        return res.status(401).json({
-          status: 'error',
-          message: 'Authentication required',
-        });
-      }
-
-      const data: ChangePasswordInput = req.body;
-      const result = await this.authService.changePassword(
-        req.user.id,
-        data.currentPassword,
-        data.newPassword
-      );
-
-      res.status(200).json({
-        status: 'success',
-        message: result.message,
+    if (!req.user) {
+      return res.status(401).json({
+        status: 'error',
+        message: 'Authentication required',
       });
-    } catch (error) {
-      throw error;
     }
+
+    const data: ChangePasswordInput = req.body;
+    const result = await this.authService.changePassword(
+      req.user.id,
+      data.currentPassword,
+      data.newPassword
+    );
+
+    res.status(200).json({
+      status: 'success',
+      message: result.message,
+    });
   };
 
   getProfile = async (req: AuthRequest, res: Response) => {
-    try {
-      if (!req.user) {
-        return res.status(401).json({
-          status: 'error',
-          message: 'Authentication required',
-        });
-      }
-
-      const user = await this.authService.getProfile(req.user.id);
-
-      res.status(200).json({
-        status: 'success',
-        data: user,
+    if (!req.user) {
+      return res.status(401).json({
+        status: 'error',
+        message: 'Authentication required',
       });
-    } catch (error) {
-      throw error;
     }
+
+    const user = await this.authService.getProfile(req.user.id);
+
+    res.status(200).json({
+      status: 'success',
+      data: user,
+    });
   };
 }

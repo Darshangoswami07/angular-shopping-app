@@ -1,5 +1,6 @@
 import { prisma } from '#/prisma/client.js';
 import { AppError } from '#/middleware/error.middleware.js';
+import type { OrderStatus } from '../../generated/prisma/enums.js';
 
 export class OrderService {
   async createOrder(userId: string, data: {
@@ -188,7 +189,7 @@ export class OrderService {
 
     const updatedOrder = await prisma.order.update({
       where: { id: orderId },
-      data: { status: status as any },
+      data: { status: status as OrderStatus },
       include: {
         items: {
           include: {
@@ -204,9 +205,9 @@ export class OrderService {
   async getAllOrders(page: number = 1, limit: number = 10, status?: string) {
     const skip = (page - 1) * limit;
 
-    const where: any = {};
+    const where: { status?: OrderStatus } = {};
     if (status) {
-      where.status = status;
+      where.status = status as OrderStatus;
     }
 
     const [orders, total] = await Promise.all([

@@ -36,6 +36,12 @@ export interface RegisterCredentials {
   phone?: string;
 }
 
+interface StoredSession {
+  user: User;
+  accessToken: string;
+  refreshToken: string;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -49,75 +55,122 @@ export class AuthService {
   }
 
   private loadUserFromStorage() {
-    const user = localStorage.getItem('user');
-    if (user) {
-      this.currentUserSubject.next(JSON.parse(user));
+    const stored = localStorage.getItem('session');
+    if (stored) {
+      try {
+        const session: StoredSession = JSON.parse(stored);
+        this.currentUserSubject.next(session.user);
+      } catch {
+        localStorage.removeItem('session');
+      }
     }
   }
 
   register(credentials: RegisterCredentials): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.apiUrl}/auth/register`, credentials).pipe(
-      tap((response) => {
-        this.setUser(response.data.user);
-      })
-    );
+    return this.http
+      .post<AuthResponse>(`${this.apiUrl}/auth/register`, credentials)
+      .pipe(
+        tap((response) => {
+          this.setSession(response.data.user, response.data.accessToken, response.data.refreshToken);
+        })
+      );
   }
 
   login(credentials: LoginCredentials): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.apiUrl}/auth/login`, credentials).pipe(
-      tap((response) => {
-        this.setUser(response.data.user);
-      })
-    );
+    return this.http
+      .post<AuthResponse>(`${this.apiUrl}/auth/login`, credentials)
+      .pipe(
+        tap((response) => {
+          this.setSession(response.data.user, response.data.accessToken, response.data.refreshToken);
+        })
+      );
   }
 
-  logout(): Observable<any> {
-    return this.http.post(`${this.apiUrl}/auth/logout`, {}).pipe(
-      tap(() => {
-        this.clearUser();
-      })
-    );
+  logout(): Observable<{ status: string; message: string }> {
+    return this.http
+      .post<{ status: string; message: string }>(`${this.apiUrl}/auth/logout`, {})
+      .pipe(
+        tap(() => {
+          this.clearSession();
+        })
+      );
   }
 
   refreshToken(): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.apiUrl}/auth/refresh-token`, {}).pipe(
-      tap((response) => {
-        this.setUser(response.data.user);
-      })
+    return this.http
+      .post<AuthResponse>(`${this.apiUrl}/auth/refresh-token`, {})
+      .pipe(
+        tap((response) => {
+          this.setSession(response.data.user, response.data.accessToken, response.data.refreshToken);
+        })
+      );
+  }
+
+  forgotPassword(
+    email: string
+  ): Observable<{ status: string; message: string; data: { resetToken: string } }> {
+    return this.http.post<{
+      status: string;
+      message: string;
+      data: { resetToken: string };
+    }>(`${this.apiUrl}/auth/forgot-password`, { email });
+  }
+
+  resetPassword(
+    token: string,
+    password: string
+  ): Observable<{ status: string; message: string }> {
+    return this.http.post<{ status: string; message: string }>(
+      `${this.apiUrl}/auth/reset-password`,
+      { token, password }
     );
   }
 
-  forgotPassword(email: string): Observable<any> {
-    return this.http.post(`${this.apiUrl}/auth/forgot-password`, { email });
-  }
-
-  resetPassword(token: string, password: string): Observable<any> {
-    return this.http.post(`${this.apiUrl}/auth/reset-password`, { token, password });
-  }
-
-  changePassword(currentPassword: string, newPassword: string): Observable<any> {
-    return this.http.post(`${this.apiUrl}/auth/change-password`, {
-      currentPassword,
-      newPassword,
-    });
+  changePassword(
+    currentPassword: string,
+    newPassword: string
+  ): Observable<{ status: string; message: string }> {
+    return this.http.post<{ status: string; message: string }>(
+      `${this.apiUrl}/auth/change-password`,
+      {
+        currentPassword,
+        newPassword,
+      }
+    );
   }
 
   getProfile(): Observable<{ status: string; data: User }> {
-    return this.http.get<{ status: string; data: User }>(`${this.apiUrl}/auth/profile`).pipe(
-      tap((response) => {
-        this.setUser(response.data);
-      })
-    );
+    return this.http
+      .get<{ status: string; data: User }>(`${this.apiUrl}/auth/profile`)
+      .pipe(
+        tap((response) => {
+          this.currentUserSubject.next(response.data);
+        })
+      );
   }
 
-  private setUser(user: User) {
-    localStorage.setItem('user', JSON.stringify(user));
+  private setSession(user: User, accessToken: string, refreshToken: string) {
+    const session: StoredSession = { user, accessToken, refreshToken };
+    localStorage.setItem('session', JSON.stringify(session));
     this.currentUserSubject.next(user);
   }
 
-  private clearUser() {
-    localStorage.removeItem('user');
+  private clearSession() {
+    localStorage.removeItem('session');
     this.currentUserSubject.next(null);
+  }
+
+  get accessToken(): string | null {
+    const stored = localStorage.getItem('session');
+    if (stored) {
+      try {
+        const session: StoredSession = JSON.parse(stored);
+        return session.accessToken;
+      } catch {
+        return null;
+      }
+    }
+    return null;
   }
 
   get currentUser(): User | null {
@@ -130,5 +183,9 @@ export class AuthService {
 
   isAdmin(): boolean {
     return this.currentUserSubject.value?.role === 'ADMIN';
+  }
+
+  forceLogout() {
+    this.clearSession();
   }
 }

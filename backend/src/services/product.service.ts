@@ -38,7 +38,13 @@ export class ProductService {
 
     const skip = (page - 1) * limit;
 
-    const where: any = {};
+    const where: {
+      OR?: Array<{ name: { contains: string; mode: 'insensitive' } } | { description: { contains: string; mode: 'insensitive' } }>;
+      categoryId?: string;
+      price?: { gte?: number; lte?: number };
+      isActive?: boolean;
+      isFeatured?: boolean;
+    } = {};
 
     if (search) {
       where.OR = [

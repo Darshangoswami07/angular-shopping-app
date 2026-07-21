@@ -1,14 +1,12 @@
 import { Component, OnInit, OnDestroy } from "@angular/core"
 import { CommonModule } from "@angular/common"
-import { LucideAngularModule, Trash2 } from "lucide-angular"
 import { Subscription } from "rxjs"
 import { CartService, type CartItem } from "../../services/cart.service"
-import { AuthService } from "../../services/auth.service"
 
 @Component({
   selector: "app-cart",
   standalone: true,
-  imports: [CommonModule, LucideAngularModule],
+  imports: [CommonModule],
   template: `
     <section *ngIf="cartOpen" id="cart" class="py-12 px-4 bg-white">
       <div class="container mx-auto">
@@ -39,7 +37,10 @@ import { AuthService } from "../../services/auth.service"
               </div>
 
               <button (click)="removeItem(i)" class="flex items-center gap-2 px-3 py-2 bg-white border rounded-md hover:bg-red-50">
-                <lucide-icon [img]="Trash2" [size]="16"></lucide-icon>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <polyline points="3,6 5,6 21,6"/>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                </svg>
                 Remove
               </button>
             </div>
@@ -50,15 +51,13 @@ import { AuthService } from "../../services/auth.service"
   `,
 })
 export class CartComponent implements OnInit, OnDestroy {
-  readonly Trash2 = Trash2
-
   items: CartItem[] = []
   cartCount = 0
   cartOpen = false
 
   private sub = new Subscription()
 
-  constructor(private cartService: CartService, private authService: AuthService) {}
+  constructor(private cartService: CartService) {}
 
   ngOnInit() {
     this.sub.add(this.cartService.items$.subscribe((items) => (this.items = items)))
@@ -91,6 +90,6 @@ export class CartComponent implements OnInit, OnDestroy {
   }
 
   clearCart() {
-    this.cartService.clearCart()
+    this.cartService.clearCart().subscribe()
   }
 }

@@ -16,24 +16,25 @@ export const errorHandler = (
   err: Error | AppError,
   req: Request,
   res: Response,
-  next: NextFunction
-) => {
+  _next: NextFunction
+): void => {
   if (err instanceof AppError) {
-    return res.status(err.statusCode).json({
+    res.status(err.statusCode).json({
       status: 'error',
       message: err.message,
     });
+    return;
   }
 
   console.error('Error:', err);
 
-  return res.status(500).json({
+  res.status(500).json({
     status: 'error',
     message: 'Internal server error',
   });
 };
 
-export const notFoundHandler = (req: Request, res: Response) => {
+export const notFoundHandler = (req: Request, res: Response): void => {
   res.status(404).json({
     status: 'error',
     message: `Route ${req.originalUrl} not found`,

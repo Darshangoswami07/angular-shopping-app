@@ -1,7 +1,6 @@
 import { Component } from "@angular/core"
 import { CommonModule } from "@angular/common"
 import  { CartService } from "../../services/cart.service"
-import { LucideAngularModule, Star, ShoppingCart } from "lucide-angular"
 
 interface Product {
   id: number
@@ -17,7 +16,7 @@ interface Product {
 @Component({
   selector: "app-trending-products",
   standalone: true,
-  imports: [CommonModule, LucideAngularModule],
+  imports: [CommonModule],
   template: `
     <section id="shop" class="py-20 px-4 bg-slate-50">
       <div class="container mx-auto">
@@ -52,11 +51,14 @@ interface Product {
               <!-- Rating -->
               <div class="flex items-center gap-2 mb-3">
                 <div class="flex">
-                  <lucide-icon *ngFor="let star of [1,2,3,4,5]" 
-                               [img]="Star" 
-                               [size]="16" 
-                               [ngClass]="star <= product.rating ? 'text-amber-400' : 'text-slate-300'"
-                               [style.fill]="star <= product.rating ? 'currentColor' : 'none'"></lucide-icon>
+                  <svg *ngFor="let star of [1,2,3,4,5]" 
+                       class="w-4 h-4"
+                       [class.text-amber-400]="star <= product.rating"
+                       [class.text-slate-300]="star > product.rating"
+                       [style.fill]="star <= product.rating ? 'currentColor' : 'none'"
+                       fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/>
+                  </svg>
                 </div>
                 <span class="text-sm text-slate-600">({{ product.reviews }})</span>
               </div>
@@ -71,7 +73,11 @@ interface Product {
               <!-- Add to Cart Button -->
               <button (click)="addToCart(product)" 
                       class="w-full py-3 bg-sky-500 hover:bg-sky-600 text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2 group-hover:shadow-lg">
-                <lucide-icon [img]="ShoppingCart" [size]="18"></lucide-icon>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <circle cx="9" cy="21" r="1"/>
+                  <circle cx="20" cy="21" r="1"/>
+                  <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                </svg>
                 Add to Cart
               </button>
             </div>
@@ -82,9 +88,6 @@ interface Product {
   `,
 })
 export class TrendingProductsComponent {
-  readonly Star = Star
-  readonly ShoppingCart = ShoppingCart
-
   constructor(private cartService: CartService) {}
 
   onImgError(event: Event): void {
@@ -97,80 +100,40 @@ export class TrendingProductsComponent {
 
   products: Product[] = [
     {
-    id: 1,
-    name: "Premium Wireless Headphones",
-    price: 299,
-    originalPrice: 399,
-    rating: 5,
-    reviews: 243,
-    image: "assets/images/premium-wireless-headphones.png",
-    badge: "SALE",
-  },
-    {
-      id: 2,
-      name: "Luxury Minimalist Watch",
-      price: 599,
-      rating: 5,
-      reviews: 189,
-      image: "assets/images/luxury-minimalist-watch.jpg",
-      badge: "NEW",
+      id: 1, name: "Premium Wireless Headphones", price: 299, originalPrice: 399, rating: 5, reviews: 243,
+      image: "assets/images/premium-wireless-headphones.png", badge: "SALE",
     },
     {
-      id: 3,
-      name: "Designer Leather Backpack",
-      price: 199,
-      originalPrice: 279,
-      rating: 4,
-      reviews: 156,
+      id: 2, name: "Luxury Minimalist Watch", price: 599, rating: 5, reviews: 189,
+      image: "assets/images/luxury-minimalist-watch.jpg", badge: "NEW",
+    },
+    {
+      id: 3, name: "Designer Leather Backpack", price: 199, originalPrice: 279, rating: 4, reviews: 156,
       image: "assets/images/designer-backpack.png",
     },
     {
-      id: 4,
-      name: "Smart Fitness Tracker",
-      price: 149,
-      rating: 5,
-      reviews: 312,
-      image: "assets/images/smart-fitness-tracker.png",
-      badge: "HOT",
+      id: 4, name: "Smart Fitness Tracker", price: 149, rating: 5, reviews: 312,
+      image: "assets/images/smart-fitness-tracker.png", badge: "HOT",
     },
     {
-      id: 5,
-      name: "Premium Leather Wallet",
-      price: 89,
-      rating: 5,
-      reviews: 428,
+      id: 5, name: "Premium Leather Wallet", price: 89, rating: 5, reviews: 428,
       image: "assets/images/premium-leather-wallet.png",
     },
     {
-      id: 6,
-      name: "Designer Sunglasses",
-      price: 249,
-      originalPrice: 349,
-      rating: 4,
-      reviews: 198,
-      image: "assets/images/designer-sunglasses.png",
-      badge: "SALE",
+      id: 6, name: "Designer Sunglasses", price: 249, originalPrice: 349, rating: 4, reviews: 198,
+      image: "assets/images/designer-sunglasses.png", badge: "SALE",
     },
     {
-      id: 7,
-      name: "Portable Bluetooth Speaker",
-      price: 129,
-      rating: 5,
-      reviews: 276,
+      id: 7, name: "Portable Bluetooth Speaker", price: 129, rating: 5, reviews: 276,
       image: "assets/images/bluetooth-speaker.jpg",
     },
     {
-      id: 8,
-      name: "Premium Laptop Sleeve",
-      price: 79,
-      rating: 4,
-      reviews: 164,
+      id: 8, name: "Premium Laptop Sleeve", price: 79, rating: 4, reviews: 164,
       image: "assets/images/laptop-sleeve.png",
     },
   ]
 
   addToCart(product: Product) {
-    console.log("[v2] Adding product to cart:", product.name)
     this.cartService.addToCartLegacy({
       id: product.id,
       name: product.name,

@@ -1,13 +1,11 @@
-import { Component, OnInit } from "@angular/core"
+import { Component, type OnInit } from "@angular/core"
 import { CommonModule } from "@angular/common"
-import { LucideAngularModule, X, Trash2 } from "lucide-angular"
 import { CartService, type CartItem } from "../../services/cart.service"
-import { AuthService } from "../../services/auth.service"
 
 @Component({
   selector: "app-cart-sidebar",
   standalone: true,
-  imports: [CommonModule, LucideAngularModule],
+  imports: [CommonModule],
   template: `
     <div *ngIf="cartOpen" class="fixed inset-0 z-50">
       <div class="absolute inset-0 bg-black/40" (click)="close()"></div>
@@ -16,7 +14,10 @@ import { AuthService } from "../../services/auth.service"
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-lg font-bold">Your Cart ({{ cartCount }})</h3>
           <button (click)="close()" aria-label="Close cart" class="p-2 rounded hover:bg-slate-100">
-            <lucide-icon [img]="X" [size]="18"></lucide-icon>
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
           </button>
         </div>
 
@@ -36,7 +37,10 @@ import { AuthService } from "../../services/auth.service"
             </div>
             <div>
               <button (click)="remove(i)" class="text-red-500 hover:underline flex items-center gap-2">
-                <lucide-icon [img]="Trash2" [size]="16"></lucide-icon>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <polyline points="3,6 5,6 21,6"/>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                </svg>
                 Remove
               </button>
             </div>
@@ -56,15 +60,12 @@ import { AuthService } from "../../services/auth.service"
   `,
 })
 export class CartSidebarComponent implements OnInit {
-  readonly X = X
-  readonly Trash2 = Trash2
-
   items: CartItem[] = []
   cartOpen = false
   cartCount = 0
   total = 0
 
-  constructor(private cartService: CartService, private authService: AuthService) {}
+  constructor(private cartService: CartService) {}
 
   ngOnInit() {
     this.cartService.items$.subscribe((items) => {

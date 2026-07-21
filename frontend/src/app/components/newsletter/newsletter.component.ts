@@ -1,18 +1,20 @@
 import { Component } from "@angular/core"
 import { CommonModule } from "@angular/common"
 import { FormsModule } from "@angular/forms"
-import { LucideAngularModule, Mail, Send } from "lucide-angular"
 
 @Component({
   selector: "app-newsletter",
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule],
+  imports: [CommonModule, FormsModule],
   template: `
     <section class="py-20 px-4 bg-gradient-to-br from-slate-900 to-slate-800 text-white">
       <div class="container mx-auto">
         <div class="max-w-2xl mx-auto text-center scroll-reveal">
           <div class="inline-flex items-center justify-center w-16 h-16 bg-sky-500/20 backdrop-blur-sm rounded-2xl mb-6">
-            <lucide-icon [img]="Mail" [size]="32" class="text-sky-400"></lucide-icon>
+            <svg class="w-8 h-8 text-sky-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+              <polyline points="22,6 12,13 2,6"/>
+            </svg>
           </div>
           
           <h2 class="text-4xl md:text-5xl font-bold mb-4">Stay Updated</h2>
@@ -34,7 +36,10 @@ import { LucideAngularModule, Mail, Send } from "lucide-angular"
             <button 
               type="submit"
               class="px-8 py-4 bg-sky-500 hover:bg-sky-600 text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2 shadow-lg shadow-sky-500/30 hover:shadow-xl hover:scale-105">
-              <lucide-icon [img]="Send" [size]="18"></lucide-icon>
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <line x1="22" y1="2" x2="11" y2="13"/>
+                <polygon points="22,2 15,22 11,13 2,9 22,2"/>
+              </svg>
               Subscribe
             </button>
           </form>
@@ -52,15 +57,11 @@ import { LucideAngularModule, Mail, Send } from "lucide-angular"
   `,
 })
 export class NewsletterComponent {
-  readonly Mail = Mail
-  readonly Send = Send
-
   email = ""
   submitted = false
 
   onSubmit() {
     if (this.email) {
-      console.log("[v0] Newsletter subscription:", this.email)
       this.submitted = true
       this.email = ""
       setTimeout(() => {
