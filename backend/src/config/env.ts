@@ -21,10 +21,27 @@ if (nodeEnv === 'production') {
   }
 }
 
+const parseOrigins = (): string[] => {
+  const allowed = process.env.ALLOWED_ORIGINS || process.env.CORS_ORIGIN;
+  if (allowed) {
+    return allowed.split(',').map((o) => o.trim()).filter(Boolean);
+  }
+  return [
+    'http://localhost:4200',
+    'http://localhost:65526',
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'http://127.0.0.1:4200',
+    'http://127.0.0.1:65526',
+    'http://127.0.0.1:5173',
+  ];
+};
+
 export const env = {
   nodeEnv,
   port,
   corsOrigin: process.env.CORS_ORIGIN ?? 'http://localhost:4200',
+  allowedOrigins: parseOrigins(),
   jwtSecret: process.env.JWT_SECRET ?? 'your-secret-key-change-in-production',
   jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? '7d',
   jwtRefreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN ?? '30d',

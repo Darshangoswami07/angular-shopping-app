@@ -1,11 +1,12 @@
 import { Component, type OnInit } from "@angular/core"
 import { CommonModule } from "@angular/common"
 import { CartService, type CartItem } from "../../services/cart.service"
+import { RouterModule } from '@angular/router';
 
 @Component({
   selector: "app-cart-sidebar",
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterModule],
   template: `
     <div *ngIf="cartOpen" class="fixed inset-0 z-50">
       <div class="absolute inset-0 bg-black/40" (click)="close()"></div>
@@ -52,7 +53,7 @@ import { CartService, type CartItem } from "../../services/cart.service"
           </div>
 
           <div class="pt-4">
-            <button class="w-full bg-sky-600 text-white py-3 rounded">Checkout</button>
+            <a routerLink="/checkout" (click)="close()" class="block w-full bg-sky-600 text-center text-white py-3 rounded">Checkout</a>
           </div>
         </div>
       </aside>

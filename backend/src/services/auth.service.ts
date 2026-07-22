@@ -153,17 +153,10 @@ export class AuthService {
       throw new AppError('User not found', 404);
     }
 
-    // In production, send email with reset token
-    // For now, return a token (this should be sent via email)
-    const resetToken = generateAccessToken({
-      id: user.id,
-      email: user.email,
-      role: user.role,
-    });
-
     return {
-      message: 'Password reset token generated',
-      resetToken, // In production, send this via email
+      // Do not expose password-reset credentials in an API response. Wire a
+      // transactional email provider here before enabling the reset flow.
+      message: 'If an account exists, password recovery instructions have been sent.',
     };
   }
 

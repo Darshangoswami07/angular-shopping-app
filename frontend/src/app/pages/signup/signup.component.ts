@@ -10,6 +10,8 @@ import {
 } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { ToastService } from '../../services/toast.service';
+import { CONTACT_CONFIG } from '../../config/contact.config';
 
 @Component({
   selector: 'app-signup',
@@ -107,6 +109,10 @@ import { AuthService } from '../../services/auth.service';
                 <ng-container *ngIf="signupForm.get('password')?.errors?.['required']">Password is required</ng-container>
                 <ng-container *ngIf="signupForm.get('password')?.errors?.['minlength']">Password must be at least 8 characters</ng-container>
               </p>
+              <div class="mt-3" aria-live="polite">
+                <div class="flex gap-1"><span *ngFor="let level of [1,2,3,4]" class="h-1 flex-1 rounded" [ngClass]="level <= passwordStrength ? strengthClass : 'bg-slate-200'"></span></div>
+                <p class="mt-1 text-xs text-slate-500">Password strength: {{ strengthLabel }}</p>
+              </div>
             </div>
 
             <!-- Confirm Password -->
@@ -165,7 +171,8 @@ export class SignupComponent {
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private toastService: ToastService
   ) {
     this.signupForm = this.fb.group(
       {
@@ -184,6 +191,18 @@ export class SignupComponent {
     return password === confirmPassword ? null : { passwordsMismatch: true };
   }
 
+  get passwordStrength(): number {
+    const value = this.signupForm.get('password')?.value || '';
+    let score = value.length >= 8 ? 1 : 0;
+    if (/[A-Z]/.test(value) && /[a-z]/.test(value)) score++;
+    if (/\d/.test(value)) score++;
+    if (/[^A-Za-z0-9]/.test(value)) score++;
+    return score;
+  }
+
+  get strengthLabel() { return ['Very weak', 'Weak', 'Fair', 'Strong', 'Excellent'][this.passwordStrength]; }
+  get strengthClass() { return ['bg-red-400', 'bg-red-400', 'bg-amber-400', 'bg-sky-500', 'bg-emerald-500'][this.passwordStrength]; }
+
   onSubmit() {
     if (this.signupForm.invalid) {
       this.signupForm.markAllAsTouched();
@@ -199,12 +218,21 @@ export class SignupComponent {
       .register({ email, password, firstName })
       .subscribe({
         next: () => {
-          this.router.navigate(['/']);
+          this.isLoading = false;
+          this.toastService.success(
+            'Account Created Successfully 🎉',
+            `Welcome to ${CONTACT_CONFIG.brandName}. Your account has been created successfully.`
+          );
+          // Auto-redirect to login after 2.5 seconds
+          setTimeout(() => {
+            this.router.navigate(['/login'], { queryParams: { email } });
+          }, 2500);
         },
         error: (err) => {
           this.isLoading = false;
           if (err.status === 400) {
-            this.errorMessage = err.error?.message || 'Email already exists. Please use a different email.';
+            const emailVal = this.signupForm.get('email')?.value;
+            this.toastService.openUserExistsModal(emailVal);
           } else if (err.status === 0) {
             this.errorMessage = 'Unable to connect to server. Please check your connection.';
           } else {

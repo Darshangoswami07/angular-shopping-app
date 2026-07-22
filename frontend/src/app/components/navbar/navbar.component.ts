@@ -1,8 +1,11 @@
 import { Component, type OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { Router } from '@angular/router';
 import { CartService } from '../../services/cart.service';
 import { AuthService, type User } from '../../services/auth.service';
+import { ToastService } from '../../services/toast.service';
+import { CONTACT_CONFIG } from '../../config/contact.config';
 
 @Component({
   selector: 'app-navbar',
@@ -17,7 +20,7 @@ import { AuthService, type User } from '../../services/auth.service';
             <div class="w-10 h-10 bg-gradient-to-br from-sky-500 to-blue-600 rounded-lg flex items-center justify-center shadow-lg">
               <span class="text-white font-bold text-xl">L</span>
             </div>
-            <span class="text-2xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">LuxeStore</span>
+            <span class="text-2xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">{{ contact.brandName }}</span>
           </a>
 
           <!-- Desktop Menu -->
@@ -140,8 +143,12 @@ export class NavbarComponent implements OnInit {
 
   constructor(
     private cartService: CartService,
-    private authService: AuthService
+    private authService: AuthService,
+    private toastService: ToastService,
+    private router: Router
   ) {}
+
+  readonly contact = CONTACT_CONFIG;
 
   ngOnInit() {
     this.cartService.cartCount$.subscribe((count) => {
@@ -162,11 +169,18 @@ export class NavbarComponent implements OnInit {
     this.authService.logout().subscribe({
       next: () => {
         this.authService.forceLogout();
+        this.finishLogout();
       },
       error: () => {
         this.authService.forceLogout();
+        this.finishLogout();
       },
     });
+  }
+
+  private finishLogout() {
+    this.toastService.success('Logged Out Successfully', 'See you again 👋');
+    this.router.navigate(['/login']);
   }
 
   toggleMobileMenu() {

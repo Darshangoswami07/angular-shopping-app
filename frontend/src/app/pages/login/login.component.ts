@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   ReactiveFormsModule,
@@ -6,8 +6,10 @@ import {
   FormGroup,
   Validators,
 } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import { Router, RouterModule, ActivatedRoute } from '@angular/router';
+import { ToastService } from '../../services/toast.service';
 import { AuthService } from '../../services/auth.service';
+import { CONTACT_CONFIG } from '../../config/contact.config';
 
 @Component({
   selector: 'app-login',
@@ -61,6 +63,7 @@ import { AuthService } from '../../services/auth.service';
                 <label for="password" class="block text-sm font-semibold text-slate-700">
                   Password
                 </label>
+                <button type="button" (click)="forgotPassword()" class="text-xs font-semibold text-sky-600 hover:text-sky-700">Forgot password?</button>
               </div>
               <div class="relative">
                 <input
@@ -90,6 +93,11 @@ import { AuthService } from '../../services/auth.service';
               </p>
             </div>
 
+            <label class="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
+              <input type="checkbox" formControlName="rememberMe" class="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500" />
+              Remember me on this device
+            </label>
+
             <!-- Submit -->
             <button
               type="submit"
@@ -103,6 +111,12 @@ import { AuthService } from '../../services/auth.service';
               {{ isLoading ? 'Signing in...' : 'Sign In' }}
             </button>
           </form>
+
+          <div class="mt-6 flex items-center gap-3 text-xs text-slate-400"><span class="h-px flex-1 bg-slate-200"></span><span>or continue with</span><span class="h-px flex-1 bg-slate-200"></span></div>
+          <div class="mt-4 grid grid-cols-2 gap-3">
+            <button type="button" (click)="socialLogin()" class="rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">Google</button>
+            <button type="button" (click)="socialLogin()" class="rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">Apple</button>
+          </div>
 
           <!-- Divider -->
           <div class="mt-6 pt-6 border-t-2 border-slate-100 text-center">
@@ -118,7 +132,7 @@ import { AuthService } from '../../services/auth.service';
     </div>
   `,
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   loginForm: FormGroup;
   isLoading = false;
   errorMessage = '';
@@ -127,11 +141,25 @@ export class LoginComponent {
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute,
+    private toastService: ToastService
   ) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required]],
+      rememberMe: [true],
+    });
+  }
+
+  ngOnInit() {
+    // Pre-fill email if redirected from "User Already Exists" modal
+    this.route.queryParams.subscribe((params) => {
+      if (params['email']) {
+        this.loginForm.patchValue({ email: params['email'] });
+      }
+      const rememberedEmail = localStorage.getItem('remembered_email');
+      if (rememberedEmail && !params['email']) this.loginForm.patchValue({ email: rememberedEmail, rememberMe: true });
     });
   }
 
@@ -144,10 +172,25 @@ export class LoginComponent {
     this.isLoading = true;
     this.errorMessage = '';
 
-    const { email, password } = this.loginForm.value;
+    const { email, password, rememberMe } = this.loginForm.value;
 
     this.authService.login({ email, password }).subscribe({
-      next: () => {
+      next: (response) => {
+        const firstName = response.data?.user?.firstName || 'there';
+        const hasLoggedInBefore = localStorage.getItem('has_logged_in_before');
+
+        if (hasLoggedInBefore === 'true') {
+          this.toastService.success('Welcome Back 👋', `Welcome back, ${firstName}!`);
+        } else {
+          this.toastService.success(
+            'Welcome 🎉',
+            `Welcome to ${CONTACT_CONFIG.brandName}, ${firstName}!`
+          );
+        }
+
+        localStorage.setItem('has_logged_in_before', 'true');
+        if (rememberMe) localStorage.setItem('remembered_email', email);
+        else localStorage.removeItem('remembered_email');
         this.router.navigate(['/']);
       },
       error: (err) => {
@@ -161,5 +204,22 @@ export class LoginComponent {
         }
       },
     });
+  }
+
+  forgotPassword() {
+    const email = this.loginForm.get('email')?.value;
+    if (!email || this.loginForm.get('email')?.invalid) {
+      this.loginForm.get('email')?.markAsTouched();
+      this.toastService.info('Enter your email', 'Enter the email linked to your account to begin password recovery.');
+      return;
+    }
+    this.authService.forgotPassword(email).subscribe({
+      next: () => this.toastService.info('Check your inbox', 'If an account exists, password recovery instructions have been sent.'),
+      error: () => this.toastService.info('Check your inbox', 'If an account exists, password recovery instructions have been sent.'),
+    });
+  }
+
+  socialLogin() {
+    this.toastService.info('Coming soon', 'Social sign-in will be available soon.');
   }
 }

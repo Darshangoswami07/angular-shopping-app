@@ -19,11 +19,30 @@ export const app = express();
 // Security middleware
 app.use(helmet());
 
-// CORS
-app.use(cors({
-  origin: env.corsOrigin,
+// Dynamic CORS Configuration
+const corsOptions: cors.CorsOptions = {
+  origin: (origin, callback) => {
+    // Allow requests with no origin (e.g. mobile apps, curl, Postman, server-to-server)
+    if (!origin) return callback(null, true);
+
+    if (env.allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    // In development mode, dynamically permit localhost and 127.0.0.1 on any port (VS Code Live Preview, Vite, Next.js, etc.)
+    if (env.nodeEnv === 'development' && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error(`CORS origin '${origin}' not allowed by server security policies.`));
+  },
   credentials: true,
-}));
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Authorization', 'Content-Type', 'X-Requested-With', 'Accept', 'Origin'],
+  optionsSuccessStatus: 200,
+};
+
+app.use(cors(corsOptions));
 
 // Body parsing
 app.use(express.json());

@@ -6,6 +6,12 @@ import { TrendingProductsComponent } from '../../components/trending-products/tr
 import { WhyChooseUsComponent } from '../../components/why-choose-us/why-choose-us.component';
 import { AboutComponent } from '../../components/about/about.component';
 import { NewsletterComponent } from '../../components/newsletter/newsletter.component';
+import { FlashSaleComponent } from '../../components/flash-sale/flash-sale.component';
+import { BrandsComponent } from '../../components/brands/brands.component';
+import { DeliveryInfoComponent } from '../../components/delivery-info/delivery-info.component';
+import { StatisticsComponent } from '../../components/statistics/statistics.component';
+import { CustomerReviewsComponent } from '../../components/customer-reviews/customer-reviews.component';
+import { FaqComponent } from '../../components/faq/faq.component';
 
 @Component({
   selector: 'app-home',
@@ -18,12 +24,24 @@ import { NewsletterComponent } from '../../components/newsletter/newsletter.comp
     WhyChooseUsComponent,
     AboutComponent,
     NewsletterComponent,
+    FlashSaleComponent,
+    BrandsComponent,
+    DeliveryInfoComponent,
+    StatisticsComponent,
+    CustomerReviewsComponent,
+    FaqComponent,
   ],
   template: `
     <app-hero></app-hero>
     <app-featured-categories></app-featured-categories>
+    <app-flash-sale></app-flash-sale>
     <app-trending-products></app-trending-products>
+    <app-brands></app-brands>
+    <app-delivery-info></app-delivery-info>
     <app-why-choose-us></app-why-choose-us>
+    <app-statistics></app-statistics>
+    <app-customer-reviews></app-customer-reviews>
+    <app-faq></app-faq>
     <app-about></app-about>
     <app-newsletter></app-newsletter>
   `,

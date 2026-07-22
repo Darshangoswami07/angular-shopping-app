@@ -68,9 +68,9 @@ import { CartService, type CartItem } from '../../services/cart.service';
                 <span>Total</span>
                 <span>\${{ total | number:'1.2-2' }}</span>
               </div>
-              <button class="w-full mt-4 py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl transition-all shadow-lg shadow-slate-900/20">
+              <a routerLink="/checkout" class="block w-full mt-4 py-3 bg-slate-900 hover:bg-slate-800 text-center text-white font-bold rounded-xl transition-all shadow-lg shadow-slate-900/20">
                 Proceed to Checkout
-              </button>
+              </a>
             </div>
           </div>
         </div>

@@ -67,13 +67,9 @@ export class AuthService {
   }
 
   register(credentials: RegisterCredentials): Observable<AuthResponse> {
-    return this.http
-      .post<AuthResponse>(`${this.apiUrl}/auth/register`, credentials)
-      .pipe(
-        tap((response) => {
-          this.setSession(response.data.user, response.data.accessToken, response.data.refreshToken);
-        })
-      );
+    // Registration deliberately does not create a client session. The UX sends the
+    // shopper to Login after showing the account-created confirmation.
+    return this.http.post<AuthResponse>(`${this.apiUrl}/auth/register`, credentials);
   }
 
   login(credentials: LoginCredentials): Observable<AuthResponse> {
@@ -108,12 +104,8 @@ export class AuthService {
 
   forgotPassword(
     email: string
-  ): Observable<{ status: string; message: string; data: { resetToken: string } }> {
-    return this.http.post<{
-      status: string;
-      message: string;
-      data: { resetToken: string };
-    }>(`${this.apiUrl}/auth/forgot-password`, { email });
+  ): Observable<{ status: string; message: string }> {
+    return this.http.post<{ status: string; message: string }>(`${this.apiUrl}/auth/forgot-password`, { email });
   }
 
   resetPassword(
