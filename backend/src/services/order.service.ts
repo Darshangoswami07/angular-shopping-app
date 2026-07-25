@@ -55,13 +55,22 @@ export class OrderService {
     // Generate order number
     const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
 
-    // Create order
-    const order = await prisma.order.create({
+    // Create order, decrement inventory and clear the cart atomically.
+    const order = await prisma.$transaction(async (tx) => {
+      for (const item of items) {
+        const updated = await tx.product.updateMany({
+          where: { id: item.productId, stock: { gte: item.quantity } },
+          data: { stock: { decrement: item.quantity } },
+        });
+        if (updated.count !== 1) throw new AppError('A product is no longer available in the requested quantity', 409);
+      }
+      const created = await tx.order.create({
       data: {
         orderNumber,
         userId,
         status: 'PENDING',
         paymentStatus: 'PENDING',
+        paymentMethod: 'COD',
         subtotal,
         tax,
         shipping,
@@ -86,30 +95,13 @@ export class OrderService {
           },
         },
       },
-    });
-
-    // Update product stock
-    for (const item of items) {
-      await prisma.product.update({
-        where: { id: item.productId },
-        data: {
-          stock: {
-            decrement: item.quantity,
-          },
-        },
       });
-    }
-
-    // Clear user's cart
-    const cart = await prisma.cart.findUnique({
+      const cart = await tx.cart.findUnique({
       where: { userId },
-    });
-    if (cart) {
-      await prisma.cartItem.deleteMany({
-        where: { cartId: cart.id },
       });
-    }
-
+      if (cart) await tx.cartItem.deleteMany({ where: { cartId: cart.id } });
+      return created;
+    });
     return order;
   }
 

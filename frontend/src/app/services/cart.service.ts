@@ -146,6 +146,10 @@ export class CartService {
   updateQuantity(index: number, quantity: number) {
     const items = [...this.itemsSubject.value];
     if (index < 0 || index >= items.length) return;
+    if (this.isAuthenticated && items[index].id) {
+      this.updateCartItem(items[index].id, quantity).subscribe({ error: () => this.loadCart() });
+      return;
+    }
     items[index].quantity = Math.max(1, quantity);
     this.itemsSubject.next(items);
     this.recalculateCount(items);
@@ -158,6 +162,11 @@ export class CartService {
   }
 
   removeItem(index: number) {
+    const item = this.itemsSubject.value[index];
+    if (this.isAuthenticated && item?.id) {
+      this.removeCartItem(item.id).subscribe({ error: () => this.loadCart() });
+      return;
+    }
     const next = this.itemsSubject.value.filter((_, i) => i !== index);
     this.itemsSubject.next(next);
     this.recalculateCount(next);

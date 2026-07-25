@@ -1,4 +1,4 @@
-import { Component, type OnInit } from '@angular/core';
+import { Component, HostListener, type OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { Router } from '@angular/router';
@@ -26,6 +26,7 @@ import { CONTACT_CONFIG } from '../../config/contact.config';
           <!-- Desktop Menu -->
           <div class="hidden md:flex items-center gap-6">
             <a routerLink="/" class="text-slate-700 hover:text-sky-600 font-medium transition-colors no-underline">Home</a>
+            <a routerLink="/products" class="text-slate-700 hover:text-sky-600 font-medium transition-colors no-underline">Shop</a>
             <a routerLink="/cart" class="text-slate-700 hover:text-sky-600 font-medium transition-colors no-underline">Cart</a>
 
             <!-- Auth State: Not logged in -->
@@ -40,24 +41,14 @@ import { CONTACT_CONFIG } from '../../config/contact.config';
 
             <!-- Auth State: Logged in -->
             <ng-container *ngIf="currentUser">
-              <div class="flex items-center gap-2 px-3 py-1.5 bg-sky-50 border-2 border-sky-200 rounded-xl">
-                <svg class="w-5 h-5 text-sky-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                  <circle cx="12" cy="7" r="4"/>
-                </svg>
-                <span class="text-sky-700 font-semibold text-sm">{{ displayName }}</span>
+              <div class="relative" data-profile-menu>
+                <button (click)="profileMenuOpen=!profileMenuOpen" class="grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-gradient-to-br from-sky-500 to-indigo-600 font-black text-white shadow-lg ring-2 ring-white" aria-label="Open account menu">{{ avatarInitial }}</button>
+                <div *ngIf="profileMenuOpen" class="absolute right-0 mt-3 w-60 origin-top-right rounded-2xl border border-slate-100 bg-white p-2 shadow-2xl animate-scale-in">
+                  <p class="px-3 py-2 text-sm font-bold text-slate-900">{{ displayName }}</p>
+                  <a *ngFor="let link of accountLinks" [routerLink]="link.url" (click)="profileMenuOpen=false" class="block rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 hover:text-sky-700">{{ link.label }}</a>
+                  <button (click)="logout()" class="mt-1 w-full rounded-xl px-3 py-2.5 text-left text-sm font-bold text-red-600 hover:bg-red-50">Logout</button>
+                </div>
               </div>
-              <button
-                (click)="logout()"
-                class="flex items-center gap-2 px-3 py-1.5 border-2 border-red-300 rounded-xl text-red-600 hover:bg-red-50 font-semibold text-sm transition-colors"
-              >
-                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                  <polyline points="16,17 21,12 16,7"/>
-                  <line x1="21" y1="12" x2="9" y2="12"/>
-                </svg>
-                Logout
-              </button>
             </ng-container>
 
             <!-- Cart Icon with Badge -->
@@ -139,6 +130,7 @@ import { CONTACT_CONFIG } from '../../config/contact.config';
 export class NavbarComponent implements OnInit {
   cartCount = 0;
   mobileMenuOpen = false;
+  profileMenuOpen = false;
   currentUser: User | null = null;
 
   constructor(
@@ -177,6 +169,11 @@ export class NavbarComponent implements OnInit {
       },
     });
   }
+  get avatarInitial(): string { return this.displayName.charAt(0).toUpperCase(); }
+  readonly accountLinks = [{ label: 'My Profile', url: '/profile' }, { label: 'My Orders', url: '/profile?tab=orders' }, { label: 'Wishlist', url: '/profile?tab=wishlist' }, { label: 'Saved Addresses', url: '/profile?tab=addresses' }, { label: 'Account Settings', url: '/profile?tab=settings' }];
+
+  @HostListener('document:click', ['$event'])
+  closeProfileMenu(event: Event) { if (!(event.target as HTMLElement).closest('[data-profile-menu]')) this.profileMenuOpen = false; }
 
   private finishLogout() {
     this.toastService.success('Logged Out Successfully', 'See you again 👋');
