@@ -18,6 +18,9 @@ export interface Product {
   isActive: boolean;
   isFeatured: boolean;
   categoryId: string;
+  brandId?: string;
+  thumbnail?: string;
+  rating?: number;
   createdAt: string;
   updatedAt: string;
   images: Array<{
@@ -27,6 +30,11 @@ export interface Product {
     position: number;
   }>;
   category: {
+    id: string;
+    name: string;
+    slug: string;
+  };
+  brand?: {
     id: string;
     name: string;
     slug: string;
@@ -73,8 +81,18 @@ export class ProductService {
     sortOrder?: string;
     isActive?: boolean;
     isFeatured?: boolean;
-  }): Observable<ProductsResponse> {
-    return this.http.get<ProductsResponse>(`${this.apiUrl}/products`, { params });
+  }): Observable<{ status: string; data: ProductsResponse }> {
+    const cleanParams: Record<string, string | number | boolean> = {};
+    if (params) {
+      for (const [key, value] of Object.entries(params)) {
+        if (value !== undefined && value !== null && value !== '') {
+          cleanParams[key] = value;
+        }
+      }
+    }
+    return this.http.get<{ status: string; data: ProductsResponse }>(`${this.apiUrl}/products`, {
+      params: cleanParams,
+    });
   }
 
   getProductById(id: string): Observable<{ status: string; data: Product }> {
@@ -87,6 +105,12 @@ export class ProductService {
 
   getFeaturedProducts(limit: number = 8): Observable<{ status: string; data: Product[] }> {
     return this.http.get<{ status: string; data: Product[] }>(`${this.apiUrl}/products/featured`, {
+      params: { limit },
+    });
+  }
+
+  getDealProducts(limit: number = 8): Observable<{ status: string; data: Product[] }> {
+    return this.http.get<{ status: string; data: Product[] }>(`${this.apiUrl}/products/deals`, {
       params: { limit },
     });
   }

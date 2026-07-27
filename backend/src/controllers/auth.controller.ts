@@ -1,7 +1,7 @@
 import { Response } from 'express';
 import { AuthService } from '#/services/auth.service.js';
 import { AuthRequest } from '#/middleware/auth.middleware.js';
-import type { RegisterInput, LoginInput, ChangePasswordInput } from '#/validators/auth.validator.js';
+import type { RegisterInput, LoginInput, ChangePasswordInput, UpdateProfileInput } from '#/validators/auth.validator.js';
 
 export class AuthController {
   private authService: AuthService;
@@ -167,6 +167,24 @@ export class AuthController {
 
     res.status(200).json({
       status: 'success',
+      data: user,
+    });
+  };
+
+  updateProfile = async (req: AuthRequest, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({
+        status: 'error',
+        message: 'Authentication required',
+      });
+    }
+
+    const data: UpdateProfileInput = req.body;
+    const user = await this.authService.updateProfile(req.user.id, data);
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Profile updated successfully',
       data: user,
     });
   };

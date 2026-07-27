@@ -18,7 +18,7 @@ import { CONTACT_CONFIG } from '../../config/contact.config';
           <!-- Logo -->
           <a routerLink="/" class="flex items-center gap-2 no-underline">
             <div class="w-10 h-10 bg-gradient-to-br from-sky-500 to-blue-600 rounded-lg flex items-center justify-center shadow-lg">
-              <span class="text-white font-bold text-xl">L</span>
+              <span class="text-white font-bold text-xl">M</span>
             </div>
             <span class="text-2xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">{{ contact.brandName }}</span>
           </a>

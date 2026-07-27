@@ -1,10 +1,10 @@
 export const CONTACT_CONFIG = {
-  brandName: 'Shopping Website',
-  brandTagline: 'Luxury Shopping & Modern Lifestyle',
+  brandName: 'Meridian Market',
+  brandTagline: 'Everything You Need, All in One Place',
   email: 'darshangirigoswami21@gmail.com',
   github: 'https://github.com/Darshangoswami07',
   linkedin: 'https://www.linkedin.com/in/darshan-goswami-b09137222/',
-  phone: '+1 (800) 555-LUXE',
+  phone: '+1 (800) 555-6374',
   address: '100 Modern Shopping Way, Suite 500, New York, NY 10001',
   supportHours: '24/7 Customer Support',
 };

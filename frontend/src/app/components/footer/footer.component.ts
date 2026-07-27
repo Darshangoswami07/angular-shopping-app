@@ -14,7 +14,7 @@ import { CONTACT_CONFIG } from '../../config/contact.config';
           <div class="scroll-reveal">
             <div class="flex items-center gap-2 mb-4">
               <div class="w-10 h-10 bg-gradient-to-br from-sky-500 to-blue-600 rounded-lg flex items-center justify-center shadow-lg">
-                <span class="text-white font-bold text-xl">L</span>
+                <span class="text-white font-bold text-xl">M</span>
               </div>
               <span class="text-2xl font-bold text-white">{{ contact.brandName }}</span>
             </div>

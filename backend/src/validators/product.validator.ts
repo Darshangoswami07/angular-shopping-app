@@ -32,8 +32,8 @@ export const productQuerySchema = z.object({
   maxPrice: z.string().optional().transform(val => val ? parseFloat(val) : undefined),
   sortBy: z.enum(['name', 'price', 'createdAt', 'stock']).optional(),
   sortOrder: z.enum(['asc', 'desc']).optional(),
-  isActive: z.string().optional().transform(val => val === 'true'),
-  isFeatured: z.string().optional().transform(val => val === 'true'),
+  isActive: z.string().optional().transform(val => (val === undefined ? undefined : val === 'true')),
+  isFeatured: z.string().optional().transform(val => (val === undefined ? undefined : val === 'true')),
 });
 
 export type CreateProductInput = z.infer<typeof createProductSchema>;

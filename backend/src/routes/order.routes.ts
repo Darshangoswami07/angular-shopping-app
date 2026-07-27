@@ -9,6 +9,7 @@ const orderController = new OrderController();
 router.post('/', authenticate, orderController.createOrder);
 router.get('/', authenticate, orderController.getOrders);
 router.get('/:orderId', authenticate, orderController.getOrderById);
+router.patch('/:orderId/cancel', authenticate, orderController.cancelOrder);
 
 // Admin routes
 router.get('/admin/all', authenticate, authorize('ADMIN'), orderController.getAllOrders);

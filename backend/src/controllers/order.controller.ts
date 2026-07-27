@@ -62,6 +62,24 @@ export class OrderController {
     });
   };
 
+  cancelOrder = async (req: AuthRequest, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({
+        status: 'error',
+        message: 'Authentication required',
+      });
+    }
+
+    const { orderId } = req.params;
+    const order = await this.orderService.cancelOrder(req.user.id, orderId as string);
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Order cancelled successfully',
+      data: order,
+    });
+  };
+
   updateOrderStatus = async (req: AuthRequest, res: Response) => {
     const { orderId } = req.params;
     const { status } = req.body;

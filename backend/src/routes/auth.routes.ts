@@ -8,6 +8,7 @@ import {
   forgotPasswordSchema,
   resetPasswordSchema,
   changePasswordSchema,
+  updateProfileSchema,
 } from '#/validators/auth.validator.js';
 
 const router = Router();
@@ -22,5 +23,6 @@ router.post('/reset-password', validate(resetPasswordSchema), authController.res
 router.post('/change-password', authenticate, validate(changePasswordSchema), authController.changePassword);
 router.get('/profile', authenticate, authController.getProfile);
 router.get('/me', authenticate, authController.getProfile);
+router.patch('/me', authenticate, validate(updateProfileSchema), authController.updateProfile);
 
 export default router;

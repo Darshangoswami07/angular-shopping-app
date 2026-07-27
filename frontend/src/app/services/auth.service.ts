@@ -8,6 +8,7 @@ export interface User {
   email: string;
   firstName?: string;
   lastName?: string;
+  phone?: string;
   role: string;
   emailVerified: boolean;
   createdAt: string;
@@ -137,6 +138,22 @@ export class AuthService {
       .pipe(
         tap((response) => {
           this.currentUserSubject.next(response.data);
+        })
+      );
+  }
+
+  updateProfile(data: { firstName?: string; lastName?: string; phone?: string }): Observable<{ status: string; message: string; data: User }> {
+    return this.http
+      .patch<{ status: string; message: string; data: User }>(`${this.apiUrl}/auth/me`, data)
+      .pipe(
+        tap((response) => {
+          this.currentUserSubject.next(response.data);
+          const stored = localStorage.getItem('session');
+          if (stored) {
+            const session: StoredSession = JSON.parse(stored);
+            session.user = response.data;
+            localStorage.setItem('session', JSON.stringify(session));
+          }
         })
       );
   }

@@ -22,17 +22,17 @@ import { CommonModule } from "@angular/common";
             </div>
 
             <h1 class="text-5xl md:text-7xl font-bold leading-tight">
-              Discover Your
+              Everything You Need,
               <span
                 class="block text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-blue-600"
-                >Perfect Style</span
+                >All in One Place</span
               >
             </h1>
 
             <p class="text-xl text-slate-300 leading-relaxed">
-              Explore our curated collection of premium products designed to
-              elevate your lifestyle. Quality meets affordability in every
-              purchase.
+              From watches and tech to beauty, groceries, and home essentials —
+              shop thousands of products across every category, all backed by
+              quality you can trust.
             </p>
 
             <div class="flex flex-wrap gap-4">

@@ -82,6 +82,7 @@ export class ProductService {
             orderBy: { position: 'asc' },
           },
           category: true,
+          brand: true,
         },
       }),
       prisma.product.count({ where }),
@@ -106,6 +107,7 @@ export class ProductService {
           orderBy: { position: 'asc' },
         },
         category: true,
+        brand: true,
         reviews: {
           where: { isActive: true },
           include: {
@@ -136,6 +138,7 @@ export class ProductService {
           orderBy: { position: 'asc' },
         },
         category: true,
+        brand: true,
         reviews: {
           where: { isActive: true },
           include: {
@@ -205,22 +208,68 @@ export class ProductService {
     return { message: 'Product deleted successfully' };
   }
 
+  // Caps how many results from the same category can appear consecutively so a
+  // single category (e.g. whichever was imported last) can't dominate a rail.
+  private diversifyByCategory<T extends { categoryId: string }>(items: T[], limit: number, perCategoryCap = 2): T[] {
+    const perCategoryCount = new Map<string, number>();
+    const picked: T[] = [];
+    for (const item of items) {
+      const count = perCategoryCount.get(item.categoryId) ?? 0;
+      if (count >= perCategoryCap) continue;
+      picked.push(item);
+      perCategoryCount.set(item.categoryId, count + 1);
+      if (picked.length >= limit) break;
+    }
+    return picked;
+  }
+
   async getFeaturedProducts(limit: number = 8) {
-    const products = await prisma.product.findMany({
+    const candidates = await prisma.product.findMany({
       where: {
         isFeatured: true,
         isActive: true,
       },
-      take: limit,
-      orderBy: { createdAt: 'desc' },
+      take: limit * 4,
+      orderBy: { rating: 'desc' },
       include: {
         images: {
           orderBy: { position: 'asc' },
         },
         category: true,
+        brand: true,
       },
     });
 
-    return products;
+    return this.diversifyByCategory(candidates, limit);
+  }
+
+  async getDealProducts(limit: number = 8) {
+    const candidates = await prisma.product.findMany({
+      where: {
+        isActive: true,
+        comparePrice: { not: null },
+      },
+      take: limit * 6,
+      orderBy: { rating: 'desc' },
+      include: {
+        images: {
+          orderBy: { position: 'asc' },
+        },
+        category: true,
+        brand: true,
+      },
+    });
+
+    const withDiscount = candidates
+      .map((product) => ({
+        product,
+        discount: product.comparePrice
+          ? (Number(product.comparePrice) - Number(product.price)) / Number(product.comparePrice)
+          : 0,
+      }))
+      .sort((a, b) => b.discount - a.discount)
+      .map((entry) => entry.product);
+
+    return this.diversifyByCategory(withDiscount, limit);
   }
 }

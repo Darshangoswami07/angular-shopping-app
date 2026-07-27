@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FaqService, Faq } from '../../services/faq.service';
 
 @Component({
   selector: 'app-faq',
@@ -16,7 +17,11 @@ import { CommonModule } from '@angular/common';
           <p class="text-slate-600 mt-3 text-base">Find quick answers to common questions about orders, shipping, and returns.</p>
         </div>
 
-        <div class="space-y-4">
+        <div *ngIf="loading" class="space-y-4">
+          <div *ngFor="let _ of skeletons" class="h-16 bg-white rounded-2xl animate-pulse border border-slate-200"></div>
+        </div>
+
+        <div *ngIf="!loading" class="space-y-4">
           <div
             *ngFor="let item of faqs; let i = index"
             class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm transition-all"
@@ -41,31 +46,30 @@ import { CommonModule } from '@angular/common';
             </div>
           </div>
         </div>
+        <p *ngIf="!loading && !faqs.length" class="text-center text-slate-600">No FAQs available yet.</p>
       </div>
     </section>
   `,
 })
-export class FaqComponent {
+export class FaqComponent implements OnInit {
   openIndex: number | null = 0;
+  faqs: Faq[] = [];
+  loading = true;
+  skeletons = [1, 2, 3, 4];
 
-  faqs = [
-    {
-      question: 'What payment methods do you accept?',
-      answer: 'We accept all major credit/debit cards (Visa, MasterCard, American Express), Apple Pay, Google Pay, and secure HTTP-only session tokens.',
-    },
-    {
-      question: 'How long does shipping take?',
-      answer: 'Standard shipping takes 3-5 business days. Express shipping delivers within 2 business days. Free shipping applies to orders above $99.',
-    },
-    {
-      question: 'What is your return & refund policy?',
-      answer: 'We offer a 30-day money-back guarantee. If you are not completely satisfied, return your item in original packaging for a full refund.',
-    },
-    {
-      question: 'How do I track my order status?',
-      answer: 'Once your order is processed, you will receive an automated email with tracking code, and you can view live updates under My Orders in your Profile.',
-    },
-  ];
+  constructor(private faqService: FaqService) {}
+
+  ngOnInit() {
+    this.faqService.getFaqs().subscribe({
+      next: (res) => {
+        this.faqs = res.data;
+        this.loading = false;
+      },
+      error: () => {
+        this.loading = false;
+      },
+    });
+  }
 
   toggle(index: number) {
     this.openIndex = this.openIndex === index ? null : index;

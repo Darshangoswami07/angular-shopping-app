@@ -27,7 +27,7 @@ import { CONTACT_CONFIG } from '../../config/contact.config';
               <span class="text-white font-bold text-2xl">L</span>
             </div>
             <h1 class="text-3xl font-bold text-slate-900">Create Account</h1>
-            <p class="text-slate-600 mt-2">Join LuxeStore today</p>
+            <p class="text-slate-600 mt-2">Join Meridian Market today</p>
           </div>
 
           <!-- Error Alert -->

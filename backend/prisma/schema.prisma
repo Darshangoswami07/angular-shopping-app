@@ -85,21 +85,56 @@ model Product {
   isActive      Boolean        @default(true)
   isFeatured    Boolean        @default(false)
   categoryId    String
+  brandId       String?
+  thumbnail     String?
+  rating        Decimal?       @db.Decimal(3, 2)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   cartItems     CartItem[]
   orderItems    OrderItem[]
   images        ProductImage[]
   category      Category       @relation(fields: [categoryId], references: [id])
+  brand         Brand?         @relation(fields: [brandId], references: [id])
   reviews       Review[]
   wishlistItems WishlistItem[]
 
   @@index([slug])
   @@index([categoryId])
+  @@index([brandId])
   @@index([isActive])
   @@index([isFeatured])
   @@index([sku])
   @@map("products")
+}
+
+model Brand {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  slug      String    @unique
+  logoUrl   String?
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  products  Product[]
+
+  @@index([slug])
+  @@index([isActive])
+  @@map("brands")
+}
+
+model Faq {
+  id        String   @id @default(cuid())
+  question  String
+  answer    String
+  category  String?
+  order     Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive])
+  @@index([order])
+  @@map("faqs")
 }
 
 model ProductImage {
@@ -176,6 +211,7 @@ model Order {
   status            OrderStatus   @default(PENDING)
   paymentStatus     PaymentStatus @default(PENDING)
   paymentMethod     String        @default("COD")
+  trackingNumber    String?       @unique
   subtotal          Decimal       @db.Decimal(10, 2)
   tax               Decimal       @default(0) @db.Decimal(10, 2)
   shipping          Decimal       @default(0) @db.Decimal(10, 2)

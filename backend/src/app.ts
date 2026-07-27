@@ -13,6 +13,11 @@ import categoryRoutes from '#/routes/category.routes.js';
 import cartRoutes from '#/routes/cart.routes.js';
 import wishlistRoutes from '#/routes/wishlist.routes.js';
 import orderRoutes from '#/routes/order.routes.js';
+import brandRoutes from '#/routes/brand.routes.js';
+import faqRoutes from '#/routes/faq.routes.js';
+import statsRoutes from '#/routes/stats.routes.js';
+import reviewRoutes from '#/routes/review.routes.js';
+import addressRoutes from '#/routes/address.routes.js';
 
 export const app = express();
 
@@ -57,11 +62,18 @@ if (env.nodeEnv === 'development') {
   app.use(morgan('dev'));
 }
 
-// Rate limiting
+// Rate limiting. A single storefront page load fans out into a dozen-plus API
+// calls (products, categories, brands, faqs, stats, reviews, several category
+// rails), so the cap has to be generous enough for normal browsing per IP.
+// In development every engineer/tab shares one machine's IP through the dev
+// server, so a realistic cap there would still trip on ordinary hot-reload
+// testing — only production needs the protective ceiling.
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  max: env.nodeEnv === 'production' ? 2000 : 100000,
   message: 'Too many requests from this IP, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 app.use('/api', limiter as unknown as RequestHandler);
 
@@ -77,6 +89,11 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/brands', brandRoutes);
+app.use('/api/faqs', faqRoutes);
+app.use('/api/stats', statsRoutes);
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/addresses', addressRoutes);
 
 // 404 handler
 app.use(notFoundHandler);

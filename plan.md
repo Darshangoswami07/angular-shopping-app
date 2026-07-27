@@ -1,459 +1,136 @@
-# Angular Shopping App - Enhancement Plan
 
-## Project Overview
-A full-stack Angular + Node.js/Express + Prisma/PostgreSQL e-commerce application with authentication, cart, wishlist, orders, and product management.
+# Angular Shopping App — Improvement & Data Migration Plan
 
----
+## 0. Current state (as found)
 
-## Current Architecture Summary
+- **Frontend**: Angular 18+ app (`frontend/`), Tailwind CSS already configured, component-based
+  home page (hero, flash-sale, featured-categories, trending-products, brands, why-choose-us,
+  customer-reviews, statistics, faq, newsletter, footer, cart-sidebar, navbar).
+- **Backend**: Express 5 + Prisma 7 + PostgreSQL (Supabase pooler), already has real routes for
+  auth, products, categories, cart, orders, wishlist — this is **already a proper own API**, not
+  a thin proxy. JWT auth, validation middleware, rate limiting, helmet, etc. are in place.
+- **Database**: Prisma schema already models User, Address, Category, Product, ProductImage,
+  Cart/CartItem, Wishlist/WishlistItem, Order/OrderItem, Review. Connected to Supabase Postgres
+  via `DATABASE_URL` / `DIRECT_URL` in `backend/.env`.
+- **Gap found**: `backend/src/scripts/seedProducts.ts` pulls product data from the public
+  FakeStoreAPI at seed time. The user wants data sourced from `https://dummyjson.com/products`
+  instead, imported once into Supabase, and the external call then removed.
+- **Gap found**: Several homepage sections render from hardcoded arrays inside the component
+  files instead of the database: `brands`, `flash-sale`, `featured-categories` (partially),
+  `customer-reviews`, `statistics`, `why-choose-us`, `faq`. These need real tables + endpoints.
 
-### Frontend (Angular 18+)
-- **Standalone Components** with lazy-loaded routes
-- **Services**: Auth, Cart, Product, Category, Order, Wishlist, Toast
-- **State**: RxJS BehaviorSubjects for reactive state
-- **Styling**: Tailwind CSS with glassmorphism design
-- **Routing**: Lazy-loaded with AuthGuard protection
+## 1. Data source decision
 
-### Backend (Node.js/Express + TypeScript + Prisma)
-- **Database**: PostgreSQL with Prisma ORM
-- **Auth**: JWT (access + refresh tokens) with HttpOnly cookies
-- **Models**: User, Address, Category, Product, ProductImage, Cart, CartItem, Wishlist, WishlistItem, Order, OrderItem, Review
-- **Auth**: Register, Login, Logout, Refresh Token, Forgot/Reset Password, Change Password
-- **Orders**: COD only currently, basic order management
+- Source API: `https://dummyjson.com/products?limit=0` — 194 products across 24 categories,
+  each with brand, price, discountPercentage, stock, rating, tags, images, thumbnail, and
+  embedded customer reviews. This is enough real data to back every homepage section (brands,
+  categories, flash-sale-via-discountPercentage, reviews, stats) without inventing new content.
+- Plan: write a **one-time import script** (replacing `seedProducts.ts`) that fetches this API,
+  writes everything into Supabase via Prisma, and is deleted (or kept only as a documented,
+  disabled dev utility) once the import has run successfully. After that, the running app never
+  calls dummyjson again — everything comes from `/api/*` → Prisma → Supabase.
 
----
+## 2. Schema additions (Prisma)
 
-## Phase 1: Core E-commerce Features (High Priority)
+Add to `backend/prisma/schema.prisma`:
 
-### 1.1 Payment Integration
-- [ ] **Stripe Integration**
-  - Backend: Stripe Checkout Session creation
-  - Frontend: Stripe.js redirect checkout
-  - Webhook handling for payment confirmation
-  - Update Order model: add `paymentIntentId`, `paymentMethod`
-- [ ] **Payment Methods UI** (Checkout page)
-  - Radio buttons: COD / Card (Stripe) / PayPal (future)
-  - Show payment method selection before "Place Order"
-- [ ] **Order Payment Status Flow**
-  - PENDING → PROCESSING (after payment) → CONFIRMED
-  - Payment failed → Order stays PENDING, allow retry
+- `Brand` — `id, name, slug, logoUrl?, isActive, createdAt`. Populated from unique `brand` values
+  in dummyjson. `Product.brandId` (optional FK) added.
+- `Faq` — `id, question, answer, category?, order, isActive, createdAt`. Seeded with real
+  storefront FAQs (shipping, returns, payment, account) since dummyjson has no FAQ data.
+- Reuse `Review` for the "Customer Reviews" section — import dummyjson's embedded reviews,
+  creating lightweight seed `User` rows (role CUSTOMER, random password hash, flag such as
+  `email` derived from `reviewerEmail`) so FK constraints hold and reviews look authentic.
+- **No new table for "Statistics" or "Flash Sale"** — these should be *computed*, not stored,
+  so they can never drift from real data:
+  - Statistics: `SELECT count(*)` on products/categories/orders/users, computed in
+    `product`/`category`/`order` services and exposed via one `/api/stats/overview` endpoint.
+  - Flash Sale: query `Product where comparePrice > price` (derived from dummyjson's
+    `discountPercentage`), ordered by discount %, limited to N — exposed via
+    `/api/products/deals` (or a query param on the existing products endpoint).
 
-### 1.2 Order Management Enhancements
-- [ ] **Order Confirmation Email** (Backend)
-  - Nodemailer/SendGrid integration
-  - Order confirmation template with items, totals, shipping address
-- [ ] **Order Tracking Page** (Frontend)
-  - `/orders/:id` page with timeline (Order Placed → Processing → Shipped → Delivered)
-  - Order status badge with color coding
-- [ ] **Admin Order Management** (Admin Dashboard)
-  - Order list with filters (status, date, payment status)
-  - Order detail modal with status update dropdown
-  - Bulk status updates
-  - Export orders to CSV
+## 3. Backend work
 
-### 1.3 Address Management
-- [ ] **Backend**: Full Address CRUD API
-  - `POST /addresses`, `GET /addresses`, `PUT /addresses/:id`, `DELETE /addresses/:id`
-  - Set default address
-- [ ] **Frontend**: Address Book in Profile
-  - Add/Edit/Delete addresses modal
-  - Set default shipping/billing
-  - Select saved address at checkout
+1. `prisma/schema.prisma`: add `Brand`, `Faq`, `Product.brandId`; run `prisma migrate dev`.
+2. New `backend/src/scripts/importDummyJsonProducts.ts` (replaces `seedProducts.ts`):
+   fetch dummyjson, upsert categories, brands, products + images, and reviews (with seed users).
+   Idempotent (safe to re-run) via `upsert`/slug uniqueness checks.
+   Configure with `dotenv/prisma:generate` and run against the existing `DATABASE_URL`
+   (existing Supabase credentials in `backend/.env` — no new project needed).
+3. New endpoints:
+   - `GET /api/brands` — list active brands.
+   - `GET /api/faqs` — list active FAQs, ordered.
+   - `GET /api/stats/overview` — computed counts (products, categories, orders, happy customers,
+     average rating).
+   - `GET /api/products/deals` — products with an active discount, for Flash Sale.
+   Each gets controller + service + route, following the existing pattern
+   (`*.controller.ts` → `*.service.ts` → `*.routes.ts`, wired in `app.ts`).
+4. Delete `seedProducts.ts` and any remaining reference to `fakestoreapi.com` once the import
+   script has been run successfully against Supabase.
 
----
+## 4. Frontend work
 
-## Phase 2: Product & Catalog Enhancements (High Priority)
+1. Add `BrandService`, `FaqService`, `StatsService` (mirroring existing `CategoryService` style).
+2. Update `trending-products`, `featured-categories` to fully use `ProductService`/`CategoryService`
+   (verify no residual hardcoded fallback data).
+3. Replace hardcoded arrays with service calls + `async` pipe / signals in:
+   - `brands.component.ts` → `BrandService.getBrands()`
+   - `flash-sale.component.ts` → `ProductService` deals endpoint
+   - `customer-reviews.component.ts` → new `ReviewService.getFeaturedReviews()`
+   - `statistics.component.ts` → `StatsService.getOverview()`
+   - `faq.component.ts` → `FaqService.getFaqs()`
+   - `why-choose-us.component.ts` — this is brand messaging, not data; leave as static content
+     unless you want it admin-editable too (optional `SiteContent` key/value table if so).
+4. Add loading/error/empty states for each (skeleton shimmer or spinner), since data is now async.
 
-### 2.1 Product Variants & Options
-- [ ] **Backend Schema Updates** (Prisma)
-  ```prisma
-  model ProductVariant {
-    id         String   @id @default(cuid())
-    productId  String
-    sku        String   @unique
-    name       String   // e.g., "Size: M, Color: Red"
-    price      Decimal  @db.Decimal(10,2)
-    comparePrice Decimal? @db.Decimal(10,2)
-    stock      Int      @default(0)
-    attributes Json     // { size: "M", color: "Red" }
-    images     ProductImage[]
-    product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  }
-  ```
-- [ ] **Frontend**: Variant selector on Product Detail (dropdowns/radio buttons)
-- [ ] **Cart**: Store variantId instead of productId
+## 5. UI / UX / responsiveness pass
 
-### 2.2 Advanced Product Filtering & Search
-- [ ] **Backend**: Enhanced Product Query
-  - Price range filter (minPrice, maxPrice)
-  - Multiple category filter
-  - Attributes filter (size, color, brand)
-  - In-stock only filter
-  - Rating filter (4+ stars, etc.)
-  - Sort: Best Selling, Top Rated, Newest, Price
-- [ ] **Frontend**: Enhanced Products Page
-  - Sidebar with collapsible filter sections
-  - Price range slider
-  - Multi-select checkboxes for categories/attributes
-  - Active filters chips with "Clear all"
-  - URL sync for shareable filtered URLs
+- Audit every page (home, products, product-detail, cart, checkout, login/signup, profile) at
+  360px, 768px, 1024px, 1440px. Tailwind is already present — enforce `sm: md: lg: xl:` usage
+  consistently instead of fixed widths.
+- Navbar: collapsible mobile menu with proper focus trap; sticky header on scroll.
+- Product cards: consistent aspect-ratio image containers (currently images come in varied
+  sizes from dummyjson) — use `object-cover` + fixed aspect box.
+- Forms (login/signup/checkout): inline validation messages, larger tap targets on mobile.
+- Dark mode (optional, nice-to-have): Tailwind `dark:` variants, toggle stored in localStorage.
+- Accessibility pass: alt text (now real, from imported product titles), color contrast, keyboard
+  navigation, `aria-*` on modal/toast/cart-sidebar.
+- Skeleton loaders for product grids/sections instead of layout jump.
 
-### 2.3 Product Reviews & Ratings
-- [ ] **Backend**: Review API
-  - `POST /products/:id/reviews` (authenticated, verified purchase only)
-  - `GET /products/:id/reviews` with pagination
-  - `PUT /reviews/:id` (owner only)
-  - `DELETE /reviews/:id` (owner/admin)
-  - Helpful/Not helpful votes
-- [ ] **Frontend**: Product Detail Reviews Section
-  - Star rating distribution chart
-  - Write review modal (only if purchased)
-  - Paginated review list
-  - Sort: Most Recent, Highest Rated, Most Helpful
+## 6. "Advanced / powerful" feature ideas (pick what's worth building)
 
-### 2.4 Product Comparison
-- [ ] **Frontend**: Compare Page (`/compare`)
-  - Add up to 4 products to comparison
-  - Side-by-side table: specs, price, ratings, features
-  - Remove from comparison
-  - Persist in localStorage
+Ranked roughly by value vs. effort given the existing schema:
 
----
+1. **Product search + filters that hit the DB** (category, price range, rating, in-stock) —
+   backend already has query params scaffolded in `ProductService`; wire the UI fully.
+2. **Real review submission** — logged-in users can leave a review on a purchased product
+   (uses existing `Review` model + `isVerified` flag tied to `OrderItem` history).
+3. **Wishlist → Cart flow polish** — already has models/routes; make sure UI round-trips.
+4. **Order tracking / order history page** — list past orders with status (model exists).
+5. **Admin dashboard** (role `ADMIN` already in schema) — CRUD for products/categories/brands/faqs
+   without touching the DB by hand; this is what makes "all data from database" maintainable.
+6. **Low-stock / inventory alerts** — `lowStockAlert` field already exists, just unused.
+7. **Discount/flash-sale scheduling** — add `saleStartsAt`/`saleEndsAt` to `Product` so Flash
+   Sale is time-boxed, not just "has a compare price."
+8. **Email notifications** (order confirmation) — nice-to-have, needs an email provider (Resend/
+   SMTP), out of scope unless you want it.
+9. **Product recommendations** ("related products" by category/brand) using existing data —
+   cheap to add, good UX payoff.
 
-## Phase 3: User Experience & Engagement (Medium Priority)
+## 7. Execution order
 
-### 3.1 Wishlist Enhancements
-- [ ] **Share Wishlist**
-  - Generate shareable link
-  - Public view (read-only)
-- [ ] **Wishlist Notifications**
-  - Email when wishlist item goes on sale
-  - Email when back in stock
-  - Price drop alert
-
-### 3.2 Recently Viewed Products
-- [ ] **Backend**: Track recently viewed (Redis or DB)
-- [ ] **Frontend**: "Recently Viewed" section on Home/Product pages
-- [ ] Persist in localStorage (guest) + sync to backend (authenticated)
-
-### 3.3 Guest Checkout
-- [ ] **Backend**: Guest order support
-  - Create order without user account
-  - Email for order confirmation
-  - Optional account creation after order
-- [ ] **Frontend**: Checkout without login
-  - Email field required
-  - "Create account after checkout" checkbox
-
-### 3.4 Newsletter & Marketing
-- [ ] **Backend**: Newsletter subscription
-  - Subscribe/Unsubscribe API
-  - Double opt-in email
-  - Mailchimp/SendGrid integration
-- [ ] **Frontend**: Newsletter popup (exit intent)
-  - Inline footer subscription
+1. Confirm this plan.
+2. Prisma schema migration (`Brand`, `Faq`, `Product.brandId`) against Supabase.
+3. Build + run the dummyjson import script → verify data in Supabase (product/category/brand/
+   review counts).
+4. Remove `seedProducts.ts` / dummyjson references from the codebase.
+5. Add the 4 new backend endpoints.
+6. Wire frontend services + replace hardcoded arrays.
+7. Responsive/UX pass across all pages.
+8. Optional: implement highest-value items from Section 6 (search/filters, reviews, admin
+   dashboard) as follow-up, one at a time.
 
 ---
-
-## Phase 4: Admin Dashboard (Medium Priority)
-
-### 4.1 Admin Authentication & Authorization
-- [ ] Role-based access (ADMIN, MANAGER, STAFF)
-- [ ] Admin-only routes guard
-
-### 4.2 Dashboard Overview
-- [ ] Revenue chart (daily/weekly/monthly)
-- [ ] Orders count by status
-- [ ] Top selling products
-- [ ] Low stock alerts
-- [ ] Recent orders table
-
-### 4.3 Product Management (Admin)
-- [ ] Product CRUD with image upload
-- [ ] Bulk import/export (CSV)
-- [ ] Variant management UI
-- [ ] Category management (drag-drop hierarchy)
-
-### 4.4 User Management (Admin)
-- [ ] User list with search/filter
-- [ ] View user orders, addresses
-- [ ] Impersonate user (support)
-- [ ] Ban/activate users
-
-### 4.5 Content Management
-- [ ] Banner/Hero slider management
-- [ ] FAQ management
-- [ ] Static pages (About, Contact, Terms, Privacy)
-
----
-
-## Phase 5: Technical Improvements (Medium Priority)
-
-### 5.1 Performance Optimization
-- [ ] **Frontend**: Image optimization
-  - WebP/AVIF with fallbacks
-  - Lazy loading with IntersectionObserver
-  - Responsive images (srcset)
-- [ ] **Frontend**: Code splitting verification
-  - Analyze bundle sizes
-  - Preload critical routes
-- [ ] **Backend**: Query optimization
-  - Add database indexes for common queries
-  - Redis caching for products/categories
-  - Pagination cursor-based for large datasets
-
-### 5.2 Search Enhancement
-- [ ] **Backend**: Full-text search
-  - PostgreSQL tsvector + GIN index
-  - Or integrate Meilisearch/Typesense
-- [ ] **Frontend**: Search autocomplete
-  - Debounced suggestions
-  - Product thumbnails in dropdown
-  - Keyboard navigation
-
-### 5.3 Error Handling & Monitoring
-- [ ] **Frontend**: Global error boundary
-  - User-friendly error pages
-  - Sentry/Rollbar integration
-- [ ] **Backend**: Structured logging (Pino/Winston)
-  - Request logging
-  - Error tracking
-  - Health check endpoint
-
-### 5.4 Testing
-- [ ] **Frontend**: Unit tests (Jest + Testing Library)
-  - Services, components, guards
-- [ ] **Frontend**: E2E tests (Playwright/Cypress)
-  - Critical paths: Login → Add to Cart → Checkout
-- [ ] **Backend**: Integration tests
-  - API endpoints with test database
-  - Auth flows
-
----
-
-## Phase 6: Advanced Features (Low Priority / Future)
-
-### 6.1 Loyalty & Rewards
-- [ ] Points system (earn on purchase, redeem for discounts)
-- [ ] Referral program
-- [ ] Tiered membership (Silver/Gold/Platinum)
-
-### 6.2 Subscriptions & Recurring Orders
-- [ ] Subscribe & Save for consumables
-- [ ] Stripe Billing integration
-
-### 6.3 Multi-vendor / Marketplace
-- [ ] Vendor dashboard
-- [ ] Commission system
-- [ ] Vendor payouts
-
-### 6.4 Internationalization (i18n)
-- [ ] Multi-language support (Angular i18n)
-- [ ] Multi-currency
-- [ ] RTL support
-
-### 6.5 PWA Features
-- [ ] Service Worker for offline
-- [ ] Install prompt
-- [ ] Push notifications (order updates)
-
----
-
-## Database Schema Additions Needed
-
-```prisma
-// Add to schema.prisma
-
-model ProductVariant {
-  id            String   @id @default(cuid())
-  productId     String
-  sku           String   @unique
-  name          String
-  price         Decimal  @db.Decimal(10, 2)
-  comparePrice  Decimal? @db.Decimal(10, 2)
-  stock         Int      @default(0)
-  lowStockAlert Int      @default(5)
-  attributes    Json     // { "size": "M", "color": "Red" }
-  position      Int      @default(0)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  images        ProductImage[]
-  cartItems     CartItem[]
-  orderItems    OrderItem[]
-  wishlistItems WishlistItem[]
-
-  @@index([productId])
-  @@index([sku])
-  @@map("product_variants")
-}
-
-model Address {
-  // ... existing fields ...
-  isDefaultBilling Boolean @default(false) // Add this
-}
-
-model Newsletter {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  isActive  Boolean  @default(true)
-  subscribedAt DateTime @default(now())
-  confirmedAt DateTime?
-  @@map("newsletters")
-}
-
-model Review {
-  // ... existing fields ...
-  helpfulCount Int @default(0)
-  notHelpfulCount Int @default(0)
-  // Add helpful votes relation if needed
-}
-
-model ReviewVote {
-  id        String   @id @default(cuid())
-  reviewId  String
-  userId    String
-  isHelpful Boolean
-  createdAt DateTime @default(now())
-  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([reviewId, userId])
-  @@map("review_votes")
-}
-```
-
----
-
-## API Endpoints to Add
-
-### Addresses
-```
-POST   /api/addresses              # Create address
-GET    /api/addresses              # List user addresses
-GET    /api/addresses/:id          # Get single address
-PUT    /api/addresses/:id          # Update address
-DELETE /api/addresses/:id          # Delete address
-PUT    /api/addresses/:id/default  # Set as default
-```
-
-### Reviews
-```
-POST   /api/products/:id/reviews        # Create review (verified purchase)
-GET    /api/products/:id/reviews        # Get reviews (paginated)
-PUT    /api/reviews/:id                 # Update own review
-DELETE /api/reviews/:id                 # Delete own review
-POST   /api/reviews/:id/helpful         # Vote helpful
-```
-
-### Newsletter
-```
-POST   /api/newsletter/subscribe    # Subscribe
-POST   /api/newsletter/unsubscribe  # Unsubscribe
-POST   /api/newsletter/confirm      # Confirm subscription (token)
-```
-
-### Admin
-```
-GET    /api/admin/dashboard/stats          # Dashboard stats
-GET    /api/admin/orders                   # All orders (paginated, filtered)
-PUT    /api/admin/orders/:id/status        # Update order status
-GET    /api/admin/products                 # All products (admin view)
-POST   /api/admin/products                 # Create product
-PUT    /api/admin/products/:id             # Update product
-DELETE /api/admin/products/:id             # Delete product
-POST   /api/admin/products/import          # CSV import
-GET    /api/admin/products/export          # CSV export
-GET    /api/admin/users                    # User management
-```
-
----
-
-## Frontend Pages/Components to Add
-
-### New Pages
-- `/orders/:id` - Order detail/tracking
-- `/compare` - Product comparison
-- `/wishlist` - Dedicated wishlist page
-- `/addresses` - Address book (or in profile)
-- `/search` - Search results page (with autocomplete)
-- `/admin/*` - Admin dashboard routes
-
-### New Components
-- `ProductVariantSelector` - Size/Color picker
-- `ProductReviewForm` - Write review modal
-- `ProductReviewList` - Paginated reviews
-- `AddressForm` - Add/Edit address modal
-- `PaymentMethodSelector` - Checkout payment options
-- `OrderTimeline` - Order status tracker
-- `FilterSidebar` - Products page filters
-- `SearchAutocomplete` - Header search dropdown
-- `NewsletterPopup` - Exit intent modal
-- `RecentlyViewed` - Carousel component
-
----
-
-## Priority Matrix
-
-| Priority | Phase | Effort | Impact |
-|----------|-------|--------|--------|
-| **P0** | Payment Integration | High | Critical for revenue |
-| **P0** | Order Tracking/Email | Medium | Customer trust |
-| **P1** | Address Management | Medium | Checkout UX |
-| **P1** | Product Variants | High | Core catalog |
-| **P1** | Advanced Filtering | Medium | Discovery |
-| **P1** | Reviews & Ratings | Medium | Social proof |
-| **P2** | Admin Dashboard | High | Operations |
-| **P2** | Guest Checkout | Medium | Conversion |
-| **P2** | Search Enhancement | Medium | Discovery |
-| **P3** | Wishlist Sharing | Low | Engagement |
-| **P3** | Recently Viewed | Low | Engagement |
-| **P3** | Newsletter | Low | Marketing |
-| **P4** | Loyalty Program | High | Retention |
-| **P4** | PWA | Medium | Mobile UX |
-| **P5** | i18n/Multi-currency | High | Global |
-
----
-
-## Implementation Order Recommendation
-
-### Sprint 1-2 (Weeks 1-4): Payment & Orders
-1. Stripe integration (backend + frontend)
-2. Order confirmation emails
-3. Order tracking page
-4. Address management
-
-### Sprint 3-4 (Weeks 5-8): Product Enhancements
-1. Product variants schema + API
-2. Frontend variant selector
-3. Advanced filtering on products page
-4. Product reviews system
-
-### Sprint 5-6 (Weeks 9-12): Admin & UX
-1. Admin dashboard (orders, products)
-2. Guest checkout
-3. Search autocomplete
-4. Performance optimizations
-
-### Sprint 7+ (Weeks 13+): Growth Features
-1. Wishlist sharing/notifications
-2. Recently viewed
-3. Newsletter
-4. Loyalty program
-5. PWA
-
----
-
-## Notes for Implementation
-
-1. **Database Migrations**: Each schema change needs a Prisma migration
-2. **Environment Variables**: Add Stripe keys, email service keys, search engine keys
-3. **Type Safety**: Update TypeScript interfaces when adding API fields
-4. **Testing**: Write tests alongside features, not after
-5. **Documentation**: Update API docs (Swagger/OpenAPI) with new endpoints
-6. **Feature Flags**: Consider feature flags for gradual rollouts
-
----
-
-*Last Updated: 2026-07-23*
-*Project: angular-shopping-app*
+**Note on scope**: Step 2 modifies your live Supabase schema and step 3 writes real data into it.
+I will confirm with you again right before running the migration/import against Supabase, since
+that touches a shared external system, not just local files.

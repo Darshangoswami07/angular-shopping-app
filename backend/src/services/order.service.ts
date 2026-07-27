@@ -2,6 +2,50 @@ import { prisma } from '#/prisma/client.js';
 import { AppError } from '#/middleware/error.middleware.js';
 import type { OrderStatus } from '../../generated/prisma/enums.js';
 
+const TRACKING_STAGES: OrderStatus[] = ['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED'];
+const STAGE_LABELS: Record<string, string> = {
+  PENDING: 'Order Placed',
+  PROCESSING: 'Processing',
+  SHIPPED: 'Shipped',
+  DELIVERED: 'Delivered',
+};
+
+function generateTrackingNumber(): string {
+  const random = Math.random().toString(36).substring(2, 10).toUpperCase();
+  return `TRK-${random}`;
+}
+
+// Builds a status-driven delivery timeline from the order's real status/timestamps —
+// no external courier integration exists, so this reflects actual DB state rather
+// than fabricating live courier events.
+function withTracking<T extends { status: string; createdAt: Date; updatedAt: Date; shipping: unknown }>(order: T) {
+  const isTerminalException = order.status === 'CANCELLED' || order.status === 'REFUNDED';
+  const currentIndex = TRACKING_STAGES.indexOf(order.status as OrderStatus);
+
+  const trackingSteps = TRACKING_STAGES.map((stage, index) => ({
+    key: stage,
+    label: STAGE_LABELS[stage],
+    state: isTerminalException
+      ? 'skipped'
+      : index < currentIndex
+        ? 'done'
+        : index === currentIndex
+          ? 'current'
+          : 'upcoming',
+    date: index === 0 ? order.createdAt : index <= currentIndex && !isTerminalException ? order.updatedAt : null,
+  }));
+
+  const estimatedDelivery = new Date(order.createdAt);
+  estimatedDelivery.setDate(estimatedDelivery.getDate() + (Number(order.shipping) === 0 ? 3 : 5));
+
+  return {
+    ...order,
+    trackingSteps,
+    estimatedDelivery: isTerminalException ? null : estimatedDelivery,
+    isCancellable: order.status === 'PENDING' || order.status === 'PROCESSING',
+  };
+}
+
 export class OrderService {
   async createOrder(userId: string, data: {
     items: Array<{ productId: string; quantity: number }>;
@@ -71,6 +115,7 @@ export class OrderService {
         status: 'PENDING',
         paymentStatus: 'PENDING',
         paymentMethod: 'COD',
+        trackingNumber: generateTrackingNumber(),
         subtotal,
         tax,
         shipping,
@@ -102,7 +147,7 @@ export class OrderService {
       if (cart) await tx.cartItem.deleteMany({ where: { cartId: cart.id } });
       return created;
     });
-    return order;
+    return withTracking(order);
   }
 
   async getOrders(userId: string, page: number = 1, limit: number = 10) {
@@ -132,7 +177,7 @@ export class OrderService {
     ]);
 
     return {
-      orders,
+      orders: orders.map(withTracking),
       pagination: {
         page,
         limit,
@@ -167,7 +212,45 @@ export class OrderService {
       throw new AppError('Order not found', 404);
     }
 
-    return order;
+    return withTracking(order);
+  }
+
+  async cancelOrder(userId: string, orderId: string) {
+    const order = await prisma.order.findFirst({
+      where: { id: orderId, userId },
+      include: { items: true },
+    });
+
+    if (!order) {
+      throw new AppError('Order not found', 404);
+    }
+
+    if (order.status !== 'PENDING' && order.status !== 'PROCESSING') {
+      throw new AppError(`Order cannot be cancelled once it is ${order.status.toLowerCase()}`, 400);
+    }
+
+    const updated = await prisma.$transaction(async (tx) => {
+      for (const item of order.items) {
+        await tx.product.update({
+          where: { id: item.productId },
+          data: { stock: { increment: item.quantity } },
+        });
+      }
+
+      return tx.order.update({
+        where: { id: orderId },
+        data: { status: 'CANCELLED' },
+        include: {
+          items: {
+            include: {
+              product: { include: { images: { orderBy: { position: 'asc' } } } },
+            },
+          },
+        },
+      });
+    });
+
+    return withTracking(updated);
   }
 
   async updateOrderStatus(orderId: string, status: string) {

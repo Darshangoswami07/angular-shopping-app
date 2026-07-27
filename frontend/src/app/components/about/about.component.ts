@@ -1,5 +1,6 @@
 import { Component } from "@angular/core"
 import { CommonModule } from "@angular/common"
+import { CONTACT_CONFIG } from '../../config/contact.config';
 
 @Component({
   selector: "app-about",
@@ -9,8 +10,8 @@ import { CommonModule } from "@angular/common"
     <section id="about" class="py-20 px-4 bg-slate-50">
       <div class="container mx-auto">
         <div class="text-center mb-8">
-          <h2 class="text-4xl font-bold text-slate-900 mb-2">About LuxeStore</h2>
-          <p class="text-lg text-slate-600">We curate premium products with style and sustainability in mind. Our mission is to make quality accessible and beautiful.</p>
+          <h2 class="text-4xl font-bold text-slate-900 mb-2">About {{ contact.brandName }}</h2>
+          <p class="text-lg text-slate-600">We bring together thousands of products across every category — from tech and fashion to home and grocery essentials — so you always find what you need in one place.</p>
         </div>
 
         <div class="grid md:grid-cols-3 gap-6">
@@ -31,4 +32,6 @@ import { CommonModule } from "@angular/common"
     </section>
   `,
 })
-export class AboutComponent {}
+export class AboutComponent {
+  readonly contact = CONTACT_CONFIG;
+}

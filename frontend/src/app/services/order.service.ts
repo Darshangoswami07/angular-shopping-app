@@ -16,12 +16,21 @@ export interface OrderItem {
   };
 }
 
+export interface TrackingStep {
+  key: string;
+  label: string;
+  state: 'done' | 'current' | 'upcoming' | 'skipped';
+  date: string | null;
+}
+
 export interface Order {
   id: string;
   orderNumber: string;
   userId: string;
   status: string;
   paymentStatus: string;
+  paymentMethod: string;
+  trackingNumber?: string;
   subtotal: number;
   tax: number;
   shipping: number;
@@ -38,6 +47,9 @@ export interface Order {
   createdAt: string;
   updatedAt: string;
   items: OrderItem[];
+  trackingSteps: TrackingStep[];
+  estimatedDelivery: string | null;
+  isCancellable: boolean;
 }
 
 export interface OrdersResponse {
@@ -83,5 +95,9 @@ export class OrderService {
 
   getOrderById(orderId: string): Observable<{ status: string; data: Order }> {
     return this.http.get<{ status: string; data: Order }>(`${this.apiUrl}/orders/${orderId}`);
+  }
+
+  cancelOrder(orderId: string): Observable<{ status: string; message: string; data: Order }> {
+    return this.http.patch<{ status: string; message: string; data: Order }>(`${this.apiUrl}/orders/${orderId}/cancel`, {});
   }
 }

@@ -82,4 +82,14 @@ export class ProductController {
       data: products,
     });
   };
+
+  getDealProducts = async (req: AuthRequest, res: Response) => {
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : 8;
+    const products = await this.productService.getDealProducts(limit);
+
+    res.status(200).json({
+      status: 'success',
+      data: products,
+    });
+  };
 }
