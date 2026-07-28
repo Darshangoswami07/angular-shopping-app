@@ -1,11 +1,12 @@
 import { Component } from "@angular/core"
 import { CommonModule } from "@angular/common"
 import { FormsModule } from "@angular/forms"
+import { ScrollRevealDirective } from '../../directives/scroll-reveal.directive';
 
 @Component({
   selector: "app-newsletter",
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ScrollRevealDirective],
   template: `
     <section class="py-20 px-4 bg-gradient-to-br from-slate-900 to-slate-800 text-white">
       <div class="container mx-auto">

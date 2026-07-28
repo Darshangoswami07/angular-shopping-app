@@ -206,10 +206,23 @@ export class AuthService {
     return { message: 'Password changed successfully' };
   }
 
-  async updateProfile(userId: string, data: { firstName?: string; lastName?: string; phone?: string }) {
+  async updateProfile(userId: string, data: { firstName?: string; lastName?: string; email?: string; phone?: string }) {
+    if (data.email) {
+      const existing = await prisma.user.findUnique({ where: { email: data.email } });
+      if (existing && existing.id !== userId) {
+        throw new AppError('This email address is already in use', 409);
+      }
+    }
+
     const user = await prisma.user.update({
       where: { id: userId },
-      data,
+      data: {
+        ...data,
+        // Changing the email invalidates any prior verification for the old
+        // address; there's no verification-email flow wired up yet (see
+        // forgotPassword above), so this just keeps the flag honest.
+        ...(data.email ? { emailVerified: false } : {}),
+      },
       select: {
         id: true,
         email: true,

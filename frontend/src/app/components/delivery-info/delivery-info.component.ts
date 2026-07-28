@@ -13,7 +13,7 @@ import { CommonModule } from '@angular/common';
             <span class="inline-block px-3.5 py-1 bg-sky-500/20 text-sky-300 rounded-full text-xs font-semibold uppercase tracking-wider mb-4 border border-sky-400/30">
               🚀 Fast Worldwide Express
             </span>
-            <h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight">Free Express Shipping On Orders Over $99</h2>
+            <h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight">Free Express Shipping On Orders Over $100</h2>
             <p class="text-slate-300 mt-3 text-sm sm:text-base leading-relaxed">
               We partner with global courier leaders to ensure your luxury items arrive safely, insured, and right on schedule.
             </p>

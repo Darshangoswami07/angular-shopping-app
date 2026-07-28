@@ -137,6 +137,7 @@ export class LoginComponent implements OnInit {
   isLoading = false;
   errorMessage = '';
   showPassword = false;
+  returnUrl = '/';
 
   constructor(
     private fb: FormBuilder,
@@ -157,6 +158,9 @@ export class LoginComponent implements OnInit {
     this.route.queryParams.subscribe((params) => {
       if (params['email']) {
         this.loginForm.patchValue({ email: params['email'] });
+      }
+      if (params['returnUrl']) {
+        this.returnUrl = params['returnUrl'];
       }
       const rememberedEmail = localStorage.getItem('remembered_email');
       if (rememberedEmail && !params['email']) this.loginForm.patchValue({ email: rememberedEmail, rememberMe: true });
@@ -191,7 +195,7 @@ export class LoginComponent implements OnInit {
         localStorage.setItem('has_logged_in_before', 'true');
         if (rememberMe) localStorage.setItem('remembered_email', email);
         else localStorage.removeItem('remembered_email');
-        this.router.navigate(['/']);
+        this.router.navigateByUrl(this.returnUrl);
       },
       error: (err) => {
         this.isLoading = false;

@@ -30,6 +30,7 @@ export const changePasswordSchema = z.object({
 export const updateProfileSchema = z.object({
   firstName: z.string().min(2, 'First name must be at least 2 characters').optional(),
   lastName: z.string().min(2, 'Last name must be at least 2 characters').optional(),
+  email: z.string().email('Invalid email address').optional(),
   phone: z.string().optional(),
 });
 

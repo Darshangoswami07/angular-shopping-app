@@ -3,6 +3,7 @@ import { CommonModule } from "@angular/common"
 import { RouterLink } from "@angular/router"
 import { retry, timer } from "rxjs"
 import { CategoryService, Category } from "../../services/category.service"
+import { ScrollRevealDirective } from "../../directives/scroll-reveal.directive"
 
 interface CategoryDisplay extends Category {
   bgClass: string;
@@ -44,7 +45,7 @@ const ICONS = [
 @Component({
   selector: "app-featured-categories",
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, ScrollRevealDirective],
   template: `
     <section id="categories" class="py-20 px-4 bg-white">
       <div class="container mx-auto">
@@ -57,7 +58,7 @@ const ICONS = [
           <div *ngFor="let _ of skeletons" class="h-48 rounded-2xl bg-slate-200 animate-pulse"></div>
         </div>
 
-        <div *ngIf="!loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div *ngIf="!loading && categories.length" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <a [routerLink]="['/products']" [queryParams]="{ category: category.id }"
                *ngFor="let category of categories; let i = index"
                class="scroll-reveal group relative overflow-hidden rounded-2xl p-8 cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl"
@@ -79,6 +80,7 @@ const ICONS = [
             <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
           </a>
         </div>
+
         <div *ngIf="!loading && !categories.length" class="text-center">
           <p class="text-slate-600">{{ loadFailed ? "Categories are taking longer than usual to load." : "No categories are available yet." }}</p>
           <button *ngIf="loadFailed" (click)="load()" class="mt-3 text-sm font-semibold text-sky-600 hover:text-sky-700 underline">Try again</button>

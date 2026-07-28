@@ -8,7 +8,7 @@ import {
   AbstractControl,
   ValidationErrors,
 } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
 import { CONTACT_CONFIG } from '../../config/contact.config';
@@ -168,12 +168,16 @@ export class SignupComponent {
   errorMessage = '';
   showPassword = false;
 
+  returnUrl = '';
+
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
     private router: Router,
+    private route: ActivatedRoute,
     private toastService: ToastService
   ) {
+    this.returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') || '';
     this.signupForm = this.fb.group(
       {
         firstName: ['', [Validators.required]],
@@ -225,7 +229,9 @@ export class SignupComponent {
           );
           // Auto-redirect to login after 2.5 seconds
           setTimeout(() => {
-            this.router.navigate(['/login'], { queryParams: { email } });
+            const queryParams: Record<string, string> = { email };
+            if (this.returnUrl) queryParams['returnUrl'] = this.returnUrl;
+            this.router.navigate(['/login'], { queryParams });
           }, 2500);
         },
         error: (err) => {

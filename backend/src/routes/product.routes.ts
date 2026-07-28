@@ -11,8 +11,9 @@ const productController = new ProductController();
 router.get('/', productController.getProducts);
 router.get('/featured', productController.getFeaturedProducts);
 router.get('/deals', productController.getDealProducts);
-router.get('/:id', productController.getProductById);
 router.get('/slug/:slug', productController.getProductBySlug);
+router.get('/:id/related', productController.getRelatedProducts);
+router.get('/:id', productController.getProductById);
 
 // Admin routes
 router.post('/', authenticate, authorize('ADMIN'), validate(createProductSchema), productController.createProduct);

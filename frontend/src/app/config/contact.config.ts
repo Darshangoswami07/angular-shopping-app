@@ -4,7 +4,7 @@ export const CONTACT_CONFIG = {
   email: 'darshangirigoswami21@gmail.com',
   github: 'https://github.com/Darshangoswami07',
   linkedin: 'https://www.linkedin.com/in/darshan-goswami-b09137222/',
-  phone: '+1 (800) 555-6374',
-  address: '100 Modern Shopping Way, Suite 500, New York, NY 10001',
+  phone: '+91 88659 28963',
+  address: '1 Main St, Bageshwar, Uttarakhand 263642, India',
   supportHours: '24/7 Customer Support',
 };

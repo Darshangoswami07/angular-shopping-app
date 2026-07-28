@@ -8,6 +8,8 @@ export interface Address {
   userId: string;
   firstName: string;
   lastName: string;
+  /** Always the account's own login email, set server-side — not user-editable. */
+  email?: string;
   street: string;
   city: string;
   state: string;

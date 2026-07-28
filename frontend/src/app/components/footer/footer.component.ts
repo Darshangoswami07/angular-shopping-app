@@ -1,29 +1,32 @@
 import { Component } from "@angular/core"
 import { CommonModule } from "@angular/common"
+import { RouterLink } from "@angular/router"
 import { CONTACT_CONFIG } from '../../config/contact.config';
+import { ScrollRevealDirective } from '../../directives/scroll-reveal.directive';
 
 @Component({
   selector: "app-footer",
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink, ScrollRevealDirective],
   template: `
     <footer class="bg-slate-900 text-slate-300 py-16 px-4">
       <div class="container mx-auto">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
           <!-- Company Info -->
           <div class="scroll-reveal">
-            <div class="flex items-center gap-2 mb-4">
+            <a routerLink="/" class="flex items-center gap-2 mb-4 no-underline">
               <div class="w-10 h-10 bg-gradient-to-br from-sky-500 to-blue-600 rounded-lg flex items-center justify-center shadow-lg">
                 <span class="text-white font-bold text-xl">M</span>
               </div>
               <span class="text-2xl font-bold text-white">{{ contact.brandName }}</span>
-            </div>
+            </a>
             <p class="text-slate-400 mb-6 leading-relaxed">
               {{ contact.brandTagline }}. Curated products and exceptional service, delivered with care.
             </p>
             <div class="flex gap-4">
-              <a *ngFor="let social of socialLinks" 
+              <a *ngFor="let social of socialLinks"
                  [href]="social.url"
+                 target="_blank" rel="noopener"
                  [attr.aria-label]="social.label"
                  class="w-10 h-10 bg-slate-800 hover:bg-sky-500 rounded-lg flex items-center justify-center transition-all hover:scale-110">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" [attr.viewBox]="social.viewBox">
@@ -38,7 +41,7 @@ import { CONTACT_CONFIG } from '../../config/contact.config';
             <h3 class="text-white font-bold text-lg mb-4">Quick Links</h3>
             <ul class="space-y-3">
               <li *ngFor="let link of quickLinks">
-                <a [href]="link.url" class="hover:text-sky-400 transition-colors">{{ link.label }}</a>
+                <a [routerLink]="link.url" class="hover:text-sky-400 transition-colors no-underline">{{ link.label }}</a>
               </li>
             </ul>
           </div>
@@ -48,7 +51,7 @@ import { CONTACT_CONFIG } from '../../config/contact.config';
             <h3 class="text-white font-bold text-lg mb-4">Customer Service</h3>
             <ul class="space-y-3">
               <li *ngFor="let link of customerLinks">
-                <a [href]="link.url" class="hover:text-sky-400 transition-colors">{{ link.label }}</a>
+                <a [routerLink]="link.url" [queryParams]="link.queryParams" class="hover:text-sky-400 transition-colors no-underline">{{ link.label }}</a>
               </li>
             </ul>
           </div>
@@ -68,7 +71,7 @@ import { CONTACT_CONFIG } from '../../config/contact.config';
                 <svg class="w-5 h-5 text-sky-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <path d="M22 16.92v3a2 2 0 01-2.18 2A19.79 19.79 0 0111.19 18.9a19.5 19.5 0 01-6-6A19.79 19.79 0 012.07 4.23 2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.362 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0122 16.92z"/>
                 </svg>
-                <span>{{ contact.phone }}</span>
+                <a [href]="'tel:' + contact.phone" class="hover:text-sky-400">{{ contact.phone }}</a>
               </li>
               <li class="flex items-center gap-3">
                 <svg class="w-5 h-5 text-sky-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -104,18 +107,18 @@ export class FooterComponent {
   ]
 
   quickLinks = [
-    { label: "About Us", url: "#about" },
-    { label: "Shop", url: "#shop" },
-    { label: "Categories", url: "#categories" },
-    { label: "Blog", url: "#blog" },
-    { label: "Contact", url: "#contact" },
+    { label: "About Us", url: "/about" },
+    { label: "Shop", url: "/shop" },
+    { label: "Categories", url: "/categories" },
+    { label: "Blog", url: "/blog" },
+    { label: "Contact", url: "/contact" },
   ]
 
   customerLinks = [
-    { label: "My Account", url: "#account" },
-    { label: "Order Tracking", url: "#tracking" },
-    { label: "Shipping Info", url: "#shipping" },
-    { label: "Returns", url: "#returns" },
-    { label: "FAQ", url: "#faq" },
+    { label: "My Account", url: "/profile", queryParams: {} },
+    { label: "Order Tracking", url: "/profile", queryParams: { tab: 'orders' } },
+    { label: "Shipping Info", url: "/shipping", queryParams: {} },
+    { label: "Returns", url: "/returns", queryParams: {} },
+    { label: "FAQ", url: "/faq", queryParams: {} },
   ]
 }

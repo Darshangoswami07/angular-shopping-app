@@ -18,6 +18,7 @@ import faqRoutes from '#/routes/faq.routes.js';
 import statsRoutes from '#/routes/stats.routes.js';
 import reviewRoutes from '#/routes/review.routes.js';
 import addressRoutes from '#/routes/address.routes.js';
+import contactRoutes from '#/routes/contact.routes.js';
 
 export const app = express();
 
@@ -94,6 +95,7 @@ app.use('/api/faqs', faqRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/addresses', addressRoutes);
+app.use('/api/contact', contactRoutes);
 
 // 404 handler
 app.use(notFoundHandler);

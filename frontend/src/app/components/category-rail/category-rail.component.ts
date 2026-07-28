@@ -1,10 +1,11 @@
 import { Component, Input, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { CartService } from '../../services/cart.service';
 import { Category, CategoryService } from '../../services/category.service';
 import { Product } from '../../services/product.service';
 import { ToastService } from '../../services/toast.service';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-category-rail',
@@ -66,7 +67,9 @@ export class CategoryRailComponent implements OnChanges {
   constructor(
     private categoryService: CategoryService,
     private cartService: CartService,
-    private toast: ToastService
+    private toast: ToastService,
+    private authService: AuthService,
+    private router: Router
   ) {}
 
   ngOnChanges() {
@@ -95,6 +98,7 @@ export class CategoryRailComponent implements OnChanges {
   addToCart(event: Event, product: Product) {
     event.preventDefault();
     event.stopPropagation();
+    if (!this.authService.isAuthenticated()) { this.toast.openAuthPrompt('cart', this.router.url); return; }
     this.cartService.addToCart(product.id).subscribe({
       next: () => {
         this.cartService.openCart();

@@ -1,4 +1,4 @@
-import { Component, type OnInit, type OnDestroy } from '@angular/core';
+import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HeroComponent } from '../../components/hero/hero.component';
 import { FeaturedCategoriesComponent } from '../../components/featured-categories/featured-categories.component';
@@ -52,30 +52,4 @@ import { CategoryRailComponent } from '../../components/category-rail/category-r
     <app-newsletter></app-newsletter>
   `,
 })
-export class HomeComponent implements OnInit, OnDestroy {
-  private observer: IntersectionObserver | null = null;
-
-  ngOnInit() {
-    this.observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('revealed');
-          }
-        });
-      },
-      { threshold: 0.1 }
-    );
-
-    setTimeout(() => {
-      const elements = document.querySelectorAll('.scroll-reveal');
-      elements.forEach((el) => this.observer?.observe(el));
-    }, 100);
-  }
-
-  ngOnDestroy() {
-    if (this.observer) {
-      this.observer.disconnect();
-    }
-  }
-}
+export class HomeComponent {}

@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { RouterModule, Router } from '@angular/router';
+import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { AuthService, User } from '../../services/auth.service';
 import { OrderService, Order } from '../../services/order.service';
 import { WishlistService, WishlistItem } from '../../services/wishlist.service';
@@ -70,7 +70,7 @@ import { AddressService, Address } from '../../services/address.service';
 
             <!-- Nav -->
             <nav class="bg-white rounded-3xl shadow-xl border border-slate-200/70 p-2.5">
-              <button *ngFor="let tab of tabs" (click)="activeTab = tab.id"
+              <button *ngFor="let tab of tabs" (click)="selectTab(tab.id)"
                       class="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all mb-1 last:mb-0"
                       [ngClass]="activeTab === tab.id ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-600 hover:bg-slate-50'">
                 <span class="shrink-0" [ngSwitch]="tab.id">
@@ -112,17 +112,15 @@ import { AddressService, Address } from '../../services/address.service';
                 </div>
                 <div>
                   <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Email Address</label>
-                  <div class="relative">
-                    <input formControlName="email" type="email" readonly class="w-full pl-4 pr-10 py-3 border border-slate-200 bg-slate-50 rounded-xl text-slate-500 cursor-not-allowed" />
-                    <svg class="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-                  </div>
+                  <input formControlName="email" type="email" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 focus:outline-none text-slate-900 transition-shadow" />
+                  <p class="text-xs text-slate-400 mt-1.5">This is also the email you sign in with, and the one used on your saved addresses.</p>
                 </div>
                 <div>
                   <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Phone Number</label>
                   <input formControlName="phone" type="tel" placeholder="+1 (555) 000-0000" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 focus:outline-none text-slate-900 transition-shadow" />
                 </div>
                 <div class="sm:col-span-2 flex items-center gap-3 pt-2">
-                  <button type="submit" [disabled]="isSavingProfile" class="py-3 px-8 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl transition-all shadow-lg shadow-sky-600/20 disabled:opacity-60 flex items-center gap-2">
+                  <button type="submit" [disabled]="isSavingProfile || profileForm.invalid" class="py-3 px-8 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl transition-all shadow-lg shadow-sky-600/20 disabled:opacity-60 flex items-center gap-2">
                     <svg *ngIf="isSavingProfile" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
                     {{ isSavingProfile ? 'Saving Changes...' : 'Save Profile' }}
                   </button>
@@ -334,6 +332,7 @@ import { AddressService, Address } from '../../services/address.service';
                     <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Phone (optional)</label>
                     <input formControlName="phone" class="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:border-sky-500 focus:outline-none" />
                   </div>
+                  <p class="sm:col-span-2 text-xs text-slate-500 -mt-1">Orders to this address will be linked to <span class="font-semibold text-slate-700">{{ user?.email }}</span>, your account email.</p>
                   <label class="sm:col-span-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
                     <input type="checkbox" formControlName="isDefault" class="w-4 h-4 rounded border-slate-300 text-sky-600" />
                     Set as default shipping address
@@ -360,6 +359,7 @@ import { AddressService, Address } from '../../services/address.service';
                     <h4 class="font-bold text-slate-900 text-sm">{{ addr.firstName }} {{ addr.lastName }}</h4>
                     <p class="text-xs text-slate-600 mt-1 leading-relaxed">{{ addr.street }}, {{ addr.city }}, {{ addr.state }} {{ addr.zipCode }}, {{ addr.country }}</p>
                     <span *ngIf="addr.phone" class="text-xs text-slate-500 block mt-2">{{ addr.phone }}</span>
+                    <span *ngIf="addr.email" class="text-xs text-slate-500 block mt-0.5">{{ addr.email }}</span>
                     <div class="flex gap-2 mt-4">
                       <button (click)="editAddress(addr)" class="py-1.5 px-3 border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-bold rounded-lg transition-colors">Edit</button>
                       <button *ngIf="!addr.isDefault" (click)="setDefaultAddress(addr)" class="py-1.5 px-3 border border-sky-300 text-sky-700 hover:bg-sky-50 text-xs font-bold rounded-lg transition-colors">Set Default</button>
@@ -438,12 +438,13 @@ export class ProfileComponent implements OnInit {
     private toastService: ToastService,
     private addressService: AddressService,
     private fb: FormBuilder,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute
   ) {
     this.profileForm = this.fb.group({
       firstName: [''],
       lastName: [''],
-      email: [''],
+      email: ['', [Validators.required, Validators.email]],
       phone: [''],
     });
 
@@ -467,6 +468,13 @@ export class ProfileComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.route.queryParamMap.subscribe((params) => {
+      const tab = params.get('tab');
+      if (tab && this.tabs.some((t) => t.id === tab)) {
+        this.activeTab = tab;
+      }
+    });
+
     this.authService.currentUser$.subscribe((u) => {
       this.user = u;
       if (u) {
@@ -484,6 +492,14 @@ export class ProfileComponent implements OnInit {
     this.loadOrders();
     this.loadWishlist();
     this.loadAddresses();
+  }
+
+  selectTab(tabId: string) {
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { tab: tabId },
+      queryParamsHandling: 'merge',
+    });
   }
 
   get userInitial(): string {
@@ -607,9 +623,10 @@ export class ProfileComponent implements OnInit {
   }
 
   updateProfile() {
+    if (this.profileForm.invalid) return;
     this.isSavingProfile = true;
-    const { firstName, lastName, phone } = this.profileForm.value;
-    this.authService.updateProfile({ firstName, lastName, phone }).subscribe({
+    const { firstName, lastName, email, phone } = this.profileForm.value;
+    this.authService.updateProfile({ firstName, lastName, email, phone }).subscribe({
       next: () => {
         this.isSavingProfile = false;
         this.toastService.success('Profile Updated', 'Your profile details have been saved successfully.');

@@ -1,12 +1,12 @@
 import { Component, type OnInit } from "@angular/core"
-import { CommonModule } from "@angular/common"
+import { CommonModule, CurrencyPipe } from "@angular/common"
 import { CartService, type CartItem } from "../../services/cart.service"
 import { RouterModule } from '@angular/router';
 
 @Component({
   selector: "app-cart-sidebar",
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, CurrencyPipe],
   template: `
     <div *ngIf="cartOpen" class="fixed inset-0 z-50">
       <div class="absolute inset-0 bg-black/40" (click)="close()"></div>
@@ -29,7 +29,7 @@ import { RouterModule } from '@angular/router';
             <img [src]="item.image || (item.product?.images?.[0]?.url) || 'assets/images/placeholder.jpg'" alt="{{item.name || item.product?.name}}" class="w-16 h-16 object-cover rounded" />
             <div class="flex-1">
               <div class="font-medium">{{ item.name || item.product?.name }}</div>
-              <div class="text-sm text-slate-500">\${{ item.price ?? item.product?.price ?? '--' }}</div>
+              <div class="text-sm text-slate-500">{{ (item.price ?? item.product?.price ?? 0) | currency }}</div>
               <div class="mt-2 flex items-center gap-2">
                 <button (click)="decrease(i)" class="px-2 py-1 border rounded">-</button>
                 <div class="px-2">{{ item.quantity }}</div>

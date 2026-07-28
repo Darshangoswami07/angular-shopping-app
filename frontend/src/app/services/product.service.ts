@@ -103,6 +103,12 @@ export class ProductService {
     return this.http.get<{ status: string; data: Product }>(`${this.apiUrl}/products/slug/${slug}`);
   }
 
+  getRelatedProducts(id: string, limit: number = 8): Observable<{ status: string; data: Product[] }> {
+    return this.http.get<{ status: string; data: Product[] }>(`${this.apiUrl}/products/${id}/related`, {
+      params: { limit },
+    });
+  }
+
   getFeaturedProducts(limit: number = 8): Observable<{ status: string; data: Product[] }> {
     return this.http.get<{ status: string; data: Product[] }>(`${this.apiUrl}/products/featured`, {
       params: { limit },

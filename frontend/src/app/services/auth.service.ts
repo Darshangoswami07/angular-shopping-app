@@ -142,7 +142,7 @@ export class AuthService {
       );
   }
 
-  updateProfile(data: { firstName?: string; lastName?: string; phone?: string }): Observable<{ status: string; message: string; data: User }> {
+  updateProfile(data: { firstName?: string; lastName?: string; email?: string; phone?: string }): Observable<{ status: string; message: string; data: User }> {
     return this.http
       .patch<{ status: string; message: string; data: User }>(`${this.apiUrl}/auth/me`, data)
       .pipe(

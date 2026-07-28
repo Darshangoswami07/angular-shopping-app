@@ -1,10 +1,11 @@
 import { Component } from "@angular/core";
 import { CommonModule } from "@angular/common";
+import { ScrollRevealDirective } from "../../directives/scroll-reveal.directive";
 
 @Component({
   selector: "app-hero",
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ScrollRevealDirective],
   template: `
     <section
       class="pt-32 pb-20 px-4 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white overflow-hidden"

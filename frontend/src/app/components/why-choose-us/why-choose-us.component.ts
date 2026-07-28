@@ -1,10 +1,11 @@
 import { Component } from "@angular/core"
 import { CommonModule } from "@angular/common"
+import { ScrollRevealDirective } from '../../directives/scroll-reveal.directive';
 
 @Component({
   selector: "app-why-choose-us",
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ScrollRevealDirective],
   template: `
     <section class="py-20 px-4 bg-white">
       <div class="container mx-auto">

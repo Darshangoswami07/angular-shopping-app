@@ -18,6 +18,14 @@ export interface UserExistsModalState {
   email?: string;
 }
 
+export type AuthPromptAction = 'cart' | 'wishlist' | 'general';
+
+export interface AuthPromptModalState {
+  isOpen: boolean;
+  action?: AuthPromptAction;
+  returnUrl?: string;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -27,6 +35,9 @@ export class ToastService {
 
   private userExistsModalSubject = new BehaviorSubject<UserExistsModalState>({ isOpen: false });
   public userExistsModal$ = this.userExistsModalSubject.asObservable();
+
+  private authPromptModalSubject = new BehaviorSubject<AuthPromptModalState>({ isOpen: false });
+  public authPromptModal$ = this.authPromptModalSubject.asObservable();
 
   show(toast: Omit<Toast, 'id'>) {
     const id = Math.random().toString(36).substring(2, 9);
@@ -73,5 +84,13 @@ export class ToastService {
 
   closeUserExistsModal() {
     this.userExistsModalSubject.next({ isOpen: false });
+  }
+
+  openAuthPrompt(action: AuthPromptAction = 'general', returnUrl?: string) {
+    this.authPromptModalSubject.next({ isOpen: true, action, returnUrl });
+  }
+
+  closeAuthPrompt() {
+    this.authPromptModalSubject.next({ isOpen: false });
   }
 }
