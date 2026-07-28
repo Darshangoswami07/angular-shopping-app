@@ -22,6 +22,12 @@ import contactRoutes from '#/routes/contact.routes.js';
 
 export const app = express();
 
+// Render (and most PaaS hosts) terminate TLS at a reverse proxy and forward
+// plain HTTP, adding X-Forwarded-* headers. Without this, express-rate-limit
+// misidentifies every client as the proxy's IP and secure-cookie/HTTPS
+// detection behind the proxy is unreliable.
+app.set('trust proxy', 1);
+
 // Security middleware
 app.use(helmet());
 

@@ -1,0 +1,35 @@
+# Render Blueprint for the backend API.
+# https://render.com/docs/blueprint-spec
+#
+# This only defines the backend — the Angular frontend deploys separately to
+# Vercel (see frontend/vercel.json), since it's a static SPA build with no
+# server-side component.
+services:
+  - type: web
+    name: meridian-market-api
+    runtime: node
+    rootDir: backend
+    plan: starter
+    region: oregon
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      # Set these in the Render dashboard (not committed):
+      #   DATABASE_URL      — Supabase pooled connection string
+      #   DIRECT_URL        — Supabase direct connection string (for migrations)
+      #   JWT_SECRET        — long random secret, e.g. `openssl rand -base64 48`
+      #   ALLOWED_ORIGINS   — comma-separated frontend origin(s), e.g. https://your-app.vercel.app
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false

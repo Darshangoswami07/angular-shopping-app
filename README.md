@@ -319,18 +319,29 @@ npm install
 
 ## Environment Variables
 
-Create `backend/.env`:
+Copy `backend/.env.example` to `backend/.env` and fill in real values:
 
 ```env
-DATABASE_URL="postgresql://user:password@host:port/database"
-JWT_ACCESS_SECRET="a-long-random-secret"
-JWT_REFRESH_SECRET="a-different-long-random-secret"
-NODE_ENV="development"
+# Server
 PORT=3000
-CLIENT_URL="http://localhost:4200"
+NODE_ENV=development
+
+# Database (Supabase PostgreSQL) — both REQUIRED when NODE_ENV=production
+DATABASE_URL="postgresql://user:password@host:6543/postgres?pgbouncer=true"  # pooled, used at runtime
+DIRECT_URL="postgresql://user:password@host:5432/postgres"                   # unpooled, used for migrations
+
+# Auth — REQUIRED when NODE_ENV=production
+JWT_SECRET="replace-with-a-long-random-secret"   # e.g. openssl rand -base64 48
+JWT_EXPIRES_IN=7d
+JWT_REFRESH_EXPIRES_IN=30d
+
+# CORS — comma-separated frontend origin(s) allowed to call this API
+ALLOWED_ORIGINS="http://localhost:4200"
 ```
 
-The frontend reads its API base URL from `frontend/src/environments/environment.ts`.
+`PORT`, `JWT_EXPIRES_IN`, and `JWT_REFRESH_EXPIRES_IN` have safe defaults if omitted. `DATABASE_URL`, `DIRECT_URL`, and `JWT_SECRET` are validated at startup and **the process refuses to start in production without them** — this is intentional, not a bug, so a missing secret fails loudly at boot instead of silently running insecurely.
+
+The frontend's API base URL is resolved at **runtime**, not baked into the JS bundle at build time — see `frontend/src/assets/env.js`. This lets one built artifact be pointed at a different backend per deployment without rebuilding (see [Deployment](#deployment)).
 
 ---
 
@@ -358,11 +369,13 @@ npx prisma migrate deploy
 ## Build Instructions
 
 ```bash
-# Backend — type-checks and compiles to dist/
+# Backend — type-checks, compiles to dist/, and rewrites path aliases to
+# real relative paths (tsc alone does NOT do this — see Deployment notes)
 cd backend
 npm run build
+npm start   # sanity-check: node dist/src/server.js should start cleanly
 
-# Frontend — production build to dist/
+# Frontend — production build to dist/angular-ecommerce/browser/
 cd frontend
 npx ng build
 ```
@@ -371,9 +384,37 @@ npx ng build
 
 ## Deployment
 
-- **Backend**: deployable to any Node host (Render, Railway, Fly.io, a VPS). Runs `npm run build` then `npm start`.
-- **Frontend**: static build output (`frontend/dist/`) deployable to any static host (Vercel, Netlify, Cloudflare Pages) or served behind the same reverse proxy as the API.
-- **Database**: Supabase-hosted PostgreSQL, reachable over a pooled connection string.
+### Backend → Render
+
+A `render.yaml` blueprint is included at the repo root (`rootDir: backend`). In the Render dashboard: **New → Blueprint**, point it at this repo, and set the secrets it lists as `sync: false` (`DATABASE_URL`, `DIRECT_URL`, `JWT_SECRET`, `ALLOWED_ORIGINS`) — or configure the service manually with:
+
+- **Build Command:** `npm ci && npm run build`
+- **Start Command:** `npm start`
+- **Health Check Path:** `/health`
+
+Two details that matter for staying up long-term, not just building once:
+- The build step runs `tsc` **and then `tsc-alias`** — TypeScript's `paths` config (used for the `#/*` import alias) is compile-time-only for type-checking; it does not rewrite emitted `require()` calls. Without `tsc-alias`, the compiled server crashes on startup with `Cannot find module '#/app.js'`. This is wired into `npm run build` already — don't run `tsc` directly in a custom deploy command.
+- `app.set('trust proxy', 1)` is set because Render terminates TLS at a proxy in front of the app; without it, `express-rate-limit` misidentifies every client as the proxy's IP.
+
+### Frontend → Vercel
+
+A `vercel.json` is included in `frontend/`. In the Vercel dashboard, set the project's **Root Directory** to `frontend`. It will then run `npm run build` and serve `dist/angular-ecommerce/browser`, with SPA rewrites so deep links (e.g. `/products`) don't 404 on refresh.
+
+To point the deployed frontend at your Render backend, edit `frontend/src/assets/env.js`:
+
+```js
+window.__env = {
+  API_BASE_URL: 'https://your-backend.onrender.com/api',
+};
+```
+
+This file is a static asset, not part of the compiled JS bundle — you can update it and redeploy just that one file without rebuilding the whole app if the backend URL ever changes. `vercel.json` explicitly disables caching on it so an update takes effect immediately rather than being served stale from a CDN edge.
+
+On the backend, set `ALLOWED_ORIGINS` to include the deployed Vercel URL, or cross-origin requests will be rejected by CORS.
+
+### Database
+
+Supabase-hosted PostgreSQL. Use the pooled connection string for `DATABASE_URL` and the direct connection string for `DIRECT_URL` (Supabase's connection pooler doesn't support the prepared statements Prisma migrations need).
 
 ---
 

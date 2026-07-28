@@ -1,7 +1,29 @@
-import { Response } from 'express';
+import { Response, CookieOptions } from 'express';
 import { AuthService } from '#/services/auth.service.js';
 import { AuthRequest } from '#/middleware/auth.middleware.js';
 import type { RegisterInput, LoginInput, ChangePasswordInput, UpdateProfileInput } from '#/validators/auth.validator.js';
+
+const isProduction = process.env.NODE_ENV === 'production';
+
+// The frontend (Vercel) and backend (Render) run on different origins in
+// production, so cookies must use SameSite=None to be sent on cross-site
+// fetch/XHR requests. SameSite=None requires Secure, which is only valid over
+// HTTPS — fine in production, but must stay Lax/insecure for local HTTP dev.
+const baseCookieOptions: CookieOptions = {
+  httpOnly: true,
+  secure: isProduction,
+  sameSite: isProduction ? 'none' : 'lax',
+};
+
+const accessTokenCookieOptions: CookieOptions = {
+  ...baseCookieOptions,
+  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+};
+
+const refreshTokenCookieOptions: CookieOptions = {
+  ...baseCookieOptions,
+  maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+};
 
 export class AuthController {
   private authService: AuthService;
@@ -15,19 +37,9 @@ export class AuthController {
     const result = await this.authService.register(data);
 
     // Set HTTP-only cookies
-    res.cookie('accessToken', result.accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    });
+    res.cookie('accessToken', result.accessToken, accessTokenCookieOptions);
 
-    res.cookie('refreshToken', result.refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-    });
+    res.cookie('refreshToken', result.refreshToken, refreshTokenCookieOptions);
 
     res.status(201).json({
       status: 'success',
@@ -41,19 +53,9 @@ export class AuthController {
     const result = await this.authService.login(data);
 
     // Set HTTP-only cookies
-    res.cookie('accessToken', result.accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    });
+    res.cookie('accessToken', result.accessToken, accessTokenCookieOptions);
 
-    res.cookie('refreshToken', result.refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-    });
+    res.cookie('refreshToken', result.refreshToken, refreshTokenCookieOptions);
 
     res.status(200).json({
       status: 'success',
@@ -63,16 +65,8 @@ export class AuthController {
   };
 
   logout = async (req: AuthRequest, res: Response) => {
-    res.clearCookie('accessToken', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-    });
-    res.clearCookie('refreshToken', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-    });
+    res.clearCookie('accessToken', baseCookieOptions);
+    res.clearCookie('refreshToken', baseCookieOptions);
 
     res.status(200).json({
       status: 'success',
@@ -93,19 +87,9 @@ export class AuthController {
     const result = await this.authService.refreshToken(refreshToken);
 
     // Set new HTTP-only cookies
-    res.cookie('accessToken', result.accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    });
+    res.cookie('accessToken', result.accessToken, accessTokenCookieOptions);
 
-    res.cookie('refreshToken', result.refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-    });
+    res.cookie('refreshToken', result.refreshToken, refreshTokenCookieOptions);
 
     res.status(200).json({
       status: 'success',

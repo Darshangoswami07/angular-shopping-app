@@ -19,6 +19,9 @@ if (nodeEnv === 'production') {
   if (!directUrl) {
     throw new Error('DIRECT_URL is required in production environment variables.');
   }
+  if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET is required in production environment variables.');
+  }
 }
 
 const parseOrigins = (): string[] => {

@@ -2,6 +2,19 @@ import { app } from '#/app.js';
 import { env } from '#/config/env.js';
 import { prisma } from '#/prisma/client.js';
 
+// A truly uncaught exception or unhandled rejection leaves the process in an
+// undefined state — swallowing it and continuing risks silent data corruption
+// or a permanently wedged process. Logging and exiting lets the host platform
+// (Render, PM2, systemd, ...) restart the process cleanly instead.
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled Promise Rejection:', reason);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  process.exit(1);
+});
+
 async function startServer() {
   console.log('========================================');
   console.log('Starting backend...');

@@ -3,7 +3,7 @@ import prettier from 'eslint-config-prettier';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['.angular', 'dist', 'node_modules'] },
+  { ignores: ['.angular', 'dist', 'node_modules', 'src/assets/**'] },
   {
     languageOptions: {
       parserOptions: {
