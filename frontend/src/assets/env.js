@@ -6,5 +6,5 @@
 // Leave API_BASE_URL empty to use the build's default (see
 // src/environments/environment.ts / environment.prod.ts).
 window.__env = {
-  API_BASE_URL: '',
+  API_BASE_URL: 'https://angular-shopping-app.onrender.com/api'
 };
