@@ -341,7 +341,13 @@ ALLOWED_ORIGINS="http://localhost:4200"
 
 `PORT`, `JWT_EXPIRES_IN`, and `JWT_REFRESH_EXPIRES_IN` have safe defaults if omitted. `DATABASE_URL`, `DIRECT_URL`, and `JWT_SECRET` are validated at startup and **the process refuses to start in production without them** — this is intentional, not a bug, so a missing secret fails loudly at boot instead of silently running insecurely.
 
-The frontend's API base URL is resolved at **runtime**, not baked into the JS bundle at build time — see `frontend/src/assets/env.js`. This lets one built artifact be pointed at a different backend per deployment without rebuilding (see [Deployment](#deployment)).
+Copy `frontend/.env.example` to `frontend/.env`:
+
+```env
+NG_APP_API_URL=http://localhost:3000/api
+```
+
+The frontend uses [`@ngx-env/builder`](https://www.npmjs.com/package/@ngx-env/builder) (wired into `angular.json`'s `build`/`serve` targets) to load `.env` and expose `NG_APP_*` variables as `process.env.NG_APP_*` at build time — this is embedded into the JS bundle, not resolved at runtime, so **changing it requires a rebuild** (see [Deployment](#deployment)).
 
 ---
 
@@ -400,15 +406,13 @@ Two details that matter for staying up long-term, not just building once:
 
 A `vercel.json` is included in `frontend/`. In the Vercel dashboard, set the project's **Root Directory** to `frontend`. It will then run `npm run build` and serve `dist/angular-ecommerce/browser`, with SPA rewrites so deep links (e.g. `/products`) don't 404 on refresh.
 
-To point the deployed frontend at your Render backend, edit `frontend/src/assets/env.js`:
+To point the deployed frontend at your Render backend, set an environment variable in the Vercel project's dashboard (Settings → Environment Variables):
 
-```js
-window.__env = {
-  API_BASE_URL: 'https://your-backend.onrender.com/api',
-};
+```
+NG_APP_API_URL=https://your-backend.onrender.com/api
 ```
 
-This file is a static asset, not part of the compiled JS bundle — you can update it and redeploy just that one file without rebuilding the whole app if the backend URL ever changes. `vercel.json` explicitly disables caching on it so an update takes effect immediately rather than being served stale from a CDN edge.
+A variable already present in the build environment (like one set in Vercel's dashboard) takes priority over `frontend/.env`, so you don't need to commit the real backend URL — the committed `.env` only needs to hold a sensible local-dev default. Because the value is embedded at build time, **changing it requires a new deployment** (Vercel redeploys automatically on every push, or trigger one manually after changing the variable).
 
 On the backend, set `ALLOWED_ORIGINS` to include the deployed Vercel URL, or cross-origin requests will be rejected by CORS.
 
