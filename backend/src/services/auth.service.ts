@@ -1,8 +1,12 @@
+import crypto from 'crypto';
+import { OAuth2Client } from 'google-auth-library';
 import { prisma } from '#/prisma/client.js';
 import { hashPassword, comparePassword } from '#/utils/password.util.js';
 import { generateAccessToken, generateRefreshToken, verifyToken } from '#/utils/jwt.util.js';
 import { AppError } from '#/middleware/error.middleware.js';
 import type { RegisterInput, LoginInput } from '#/validators/auth.validator.js';
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 export class AuthService {
   async register(data: RegisterInput) {
@@ -76,6 +80,72 @@ export class AuthService {
 
     if (!isValidPassword) {
       throw new AppError('Invalid credentials', 401);
+    }
+
+    const accessToken = generateAccessToken({
+      id: user.id,
+      email: user.email,
+      role: user.role,
+    });
+
+    const refreshToken = generateRefreshToken({
+      id: user.id,
+      email: user.email,
+      role: user.role,
+    });
+
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+      },
+      accessToken,
+      refreshToken,
+    };
+  }
+
+  async googleLogin(idToken: string) {
+    if (!process.env.GOOGLE_CLIENT_ID) {
+      throw new AppError('Google sign-in is not configured', 500);
+    }
+
+    let payload;
+    try {
+      const ticket = await googleClient.verifyIdToken({
+        idToken,
+        audience: process.env.GOOGLE_CLIENT_ID,
+      });
+      payload = ticket.getPayload();
+    } catch {
+      throw new AppError('Invalid Google token', 401);
+    }
+
+    if (!payload?.email) {
+      throw new AppError('Invalid Google token', 401);
+    }
+
+    let user = await prisma.user.findUnique({ where: { email: payload.email } });
+
+    if (!user) {
+      // Google-authenticated accounts don't set a password; store a random
+      // hash so the column stays non-null and the value is never guessable.
+      const randomPassword = await hashPassword(crypto.randomBytes(32).toString('hex'));
+
+      user = await prisma.user.create({
+        data: {
+          email: payload.email,
+          password: randomPassword,
+          firstName: payload.given_name,
+          lastName: payload.family_name,
+          emailVerified: payload.email_verified ?? true,
+        },
+      });
+
+      await prisma.cart.create({ data: { userId: user.id } });
+      await prisma.wishlist.create({ data: { userId: user.id } });
     }
 
     const accessToken = generateAccessToken({

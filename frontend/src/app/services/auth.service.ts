@@ -83,6 +83,16 @@ export class AuthService {
       );
   }
 
+  googleLogin(idToken: string): Observable<AuthResponse> {
+    return this.http
+      .post<AuthResponse>(`${this.apiUrl}/auth/google`, { idToken })
+      .pipe(
+        tap((response) => {
+          this.setSession(response.data.user, response.data.accessToken, response.data.refreshToken);
+        })
+      );
+  }
+
   logout(): Observable<{ status: string; message: string }> {
     return this.http
       .post<{ status: string; message: string }>(`${this.apiUrl}/auth/logout`, {})

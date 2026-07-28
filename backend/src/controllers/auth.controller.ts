@@ -1,7 +1,7 @@
 import { Response, CookieOptions } from 'express';
 import { AuthService } from '#/services/auth.service.js';
 import { AuthRequest } from '#/middleware/auth.middleware.js';
-import type { RegisterInput, LoginInput, ChangePasswordInput, UpdateProfileInput } from '#/validators/auth.validator.js';
+import type { RegisterInput, LoginInput, GoogleLoginInput, ChangePasswordInput, UpdateProfileInput } from '#/validators/auth.validator.js';
 
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -55,6 +55,20 @@ export class AuthController {
     // Set HTTP-only cookies
     res.cookie('accessToken', result.accessToken, accessTokenCookieOptions);
 
+    res.cookie('refreshToken', result.refreshToken, refreshTokenCookieOptions);
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Login successful',
+      data: result,
+    });
+  };
+
+  googleLogin = async (req: AuthRequest, res: Response) => {
+    const { idToken }: GoogleLoginInput = req.body;
+    const result = await this.authService.googleLogin(idToken);
+
+    res.cookie('accessToken', result.accessToken, accessTokenCookieOptions);
     res.cookie('refreshToken', result.refreshToken, refreshTokenCookieOptions);
 
     res.status(200).json({
